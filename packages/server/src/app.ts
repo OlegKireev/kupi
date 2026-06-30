@@ -6,6 +6,7 @@ import {
 import type { Db } from "@/db";
 import { initSchema } from "@/schema";
 import { registerAuth } from "@/auth";
+import { accountRoutes } from "@/routes/accounts";
 
 export function buildApp(db: Db): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -22,6 +23,9 @@ export function buildApp(db: Db): FastifyInstance {
 
   // Регистрируем cookie-аутентификацию со sliding renewal
   registerAuth(app);
+
+  // Регистрируем роуты для аккаунтов
+  accountRoutes(app);
 
   app.get("/health", async () => {
     return { status: "ok" };
