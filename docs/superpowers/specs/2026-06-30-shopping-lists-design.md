@@ -38,6 +38,9 @@
   IndexedDB (кэш + очередь pending changes)
 ```
 
+Валидация — zod: схемы лежат в `shared` (один источник правды), сервер через
+`fastify-type-provider-zod` валидирует вход (body/params/query) и выводит типы оттуда же.
+
 Один лёгкий Node-процесс, БД — файл SQLite. Никаких внешних сервисов (SMTP, OAuth,
 очередей). «Нетребовательность к железу» обеспечивается отсутствием отдельной СУБД
 и realtime-инфраструктуры.
@@ -51,7 +54,7 @@ kupi/                         # корень (папка проекта)
   tsconfig.base.json
   .oxlintrc.json / oxfmt config
   packages/
-    shared/                   # общие TS-типы (Item, List, Category, Sync DTO ...)
+    shared/                   # zod-схемы как источник правды + z.infer типы (Item, List, Sync DTO ...)
     server/                   # Fastify + better-sqlite3
     client/                   # React PWA (Vite + vite-plugin-pwa)
 ```
