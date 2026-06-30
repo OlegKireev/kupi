@@ -5,6 +5,7 @@ import {
 } from "fastify-type-provider-zod";
 import type { Db } from "@/db";
 import { initSchema } from "@/schema";
+import { registerAuth } from "@/auth";
 
 export function buildApp(db: Db): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -18,6 +19,9 @@ export function buildApp(db: Db): FastifyInstance {
   // Устанавливаем zod-компиляторы для валидации и сериализации
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+
+  // Регистрируем cookie-аутентификацию со sliding renewal
+  registerAuth(app);
 
   app.get("/health", async () => {
     return { status: "ok" };
