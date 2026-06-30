@@ -7,6 +7,7 @@ import type { Db } from "@/db";
 import { initSchema } from "@/schema";
 import { registerAuth } from "@/auth";
 import { accountRoutes } from "@/routes/accounts";
+import { linkRoutes } from "@/routes/link";
 
 export function buildApp(db: Db): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -26,6 +27,9 @@ export function buildApp(db: Db): FastifyInstance {
 
   // Регистрируем роуты для аккаунтов
   accountRoutes(app);
+
+  // Регистрируем роуты для связывания устройств
+  linkRoutes(app);
 
   app.get("/health", async () => {
     return { status: "ok" };
