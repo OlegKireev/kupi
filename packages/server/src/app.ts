@@ -8,6 +8,7 @@ import { initSchema } from "@/schema";
 import { registerAuth } from "@/auth";
 import { accountRoutes } from "@/routes/accounts";
 import { linkRoutes } from "@/routes/link";
+import { listRoutes } from "@/routes/lists";
 
 export function buildApp(db: Db): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -30,6 +31,9 @@ export function buildApp(db: Db): FastifyInstance {
 
   // Регистрируем роуты для связывания устройств
   linkRoutes(app);
+
+  // Регистрируем роуты для списков покупок
+  listRoutes(app);
 
   app.get("/health", async () => {
     return { status: "ok" };
