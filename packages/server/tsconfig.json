@@ -3,7 +3,8 @@
   "compilerOptions": {
     "types": ["node"],
     "noEmit": true,
-    "declaration": false
+    "declaration": false,
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src", "test"]
 }

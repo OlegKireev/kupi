@@ -1,5 +1,5 @@
-import { openDb } from "./db.ts";
-import { buildApp } from "./app.ts";
+import { openDb } from "@/db";
+import { buildApp } from "@/app";
 
 const db = openDb();
 const app = buildApp(db);

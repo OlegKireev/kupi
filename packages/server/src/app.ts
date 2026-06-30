@@ -1,5 +1,5 @@
 import Fastify, { type FastifyInstance } from "fastify";
-import type { Db } from "./db.ts";
+import type { Db } from "@/db";
 
 export function buildApp(db: Db): FastifyInstance {
   const app = Fastify({ logger: false });
