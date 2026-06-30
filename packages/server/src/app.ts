@@ -9,6 +9,7 @@ import { registerAuth } from "@/auth";
 import { accountRoutes } from "@/routes/accounts";
 import { linkRoutes } from "@/routes/link";
 import { listRoutes } from "@/routes/lists";
+import { syncRoutes } from "@/routes/sync";
 
 export function buildApp(db: Db): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -34,6 +35,9 @@ export function buildApp(db: Db): FastifyInstance {
 
   // Регистрируем роуты для списков покупок
   listRoutes(app);
+
+  // Регистрируем роуты для синхронизации и подсказок
+  syncRoutes(app);
 
   app.get("/health", async () => {
     return { status: "ok" };
