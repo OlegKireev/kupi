@@ -119,9 +119,11 @@ See `docs/backend-known-issues.md` for the current list of deliberately-deferred
 Feature-Sliced Design, all 6 layers (`app → pages → widgets → features →
 entities → shared`), import only "downward" through a slice's public API
 (`index.ts`) — enforced by `steiger` (`pnpm --filter @kupi/client fsd-lint`,
-config in `packages/client/steiger.config.ts`). State is plain `useState`
-lifted into `widgets/list-screen/ui/ListScreen.tsx`, no Context/store/TanStack
-Query; data access is bare `fetch` via `shared/api/client.ts`'s `get`/`post`.
+config in `packages/client/steiger.config.ts`). State is plain `useState`,
+no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
+`app/App.tsx`, per-list `items`/`lastSeenSeq`/`expandedItemId` live in
+`widgets/list-screen/ui/ListScreen.tsx`; data access is bare `fetch` via
+`shared/api/client.ts`'s `get`/`post`/`patch`/`del`.
 
 - **`shared/`** — `api/client.ts` (thin `fetch` wrapper + `ApiError`),
   `config/env.ts` (`API_BASE_URL`, currently `''` — relative paths + the Vite
@@ -150,6 +152,25 @@ Query; data access is bare `fetch` via `shared/api/client.ts`'s `get`/`post`.
   `onSynced` — mount-per-list is intentional, not a missed dependency), and
   toggles each row between `ItemRow` and `features/edit-item`'s `ItemEditor`
   by `expandedItemId`.
+- **`features/list-switcher`** — the list title + `CaretDown` in the header;
+  tapping it opens a Mantine `Menu` listing the user's `lists` (switch is a
+  synchronous prop callback, no refetch) plus "Новый список" at the bottom,
+  which opens a small `Modal` with a `TextInput` calling `createList`. It
+  doesn't own the list of lists — `lists`/`activeListId` and the
+  switch/refresh callbacks are all passed down from `app/App.tsx`.
+- **`features/list-menu`** — the "⋮" `ActionIcon`, one Mantine `Menu` bundling
+  the whole "list settings" scene (same one-slice-per-UX-scene pattern as
+  `edit-item`): "Пригласить" (`POST /lists/:id/invites`) and "Подключить
+  устройство" (`POST /link-codes`, its own `api/link-code-api.ts` since
+  device-linking isn't list domain — same reasoning as `add-item`'s
+  `suggestions-api.ts`) both open the same code-`Modal` shape with a
+  "Копировать" button (`navigator.clipboard.writeText`); "Участники (N)" is a
+  disabled label that lazy-loads `getMemberCount` on menu open; "Переименовать
+  список" opens a `Modal` pre-filled with the current name; "Удалить/покинуть
+  список" is a single confirm-`Modal` and a single `deleteList` call
+  regardless of role — `DELETE /lists/:id`'s owner-deletes-vs-member-leaves
+  branching happens entirely server-side, the client never checks who owns
+  the list.
 - **`pages/list-screen`** + **`app/App.tsx`** — bootstrap flow: `GET /lists` +
   `GET /categories` in parallel; a `401` (brand-new device, no `kupi_dt`
   cookie yet) falls back to `POST /accounts`, which creates the
@@ -157,6 +178,23 @@ Query; data access is bare `fetch` via `shared/api/client.ts`'s `get`/`post`.
   bootstrap effect is guarded with a `useRef` flag against React
   `StrictMode`'s dev-mode double-invoke, which would otherwise call
   `POST /accounts` twice on a fresh device and create two accounts.
+  `lists`/`activeListId` (not a single `list`) live here so the header can
+  switch between lists; any list mutation (create/rename/delete-leave) calls
+  a shared `refreshLists(selectId?)` that just refetches `GET /lists` — no
+  manual state patching, this isn't a hot path. If a delete/leave empties
+  `lists`, `refreshLists` creates a fallback "Мои покупки" list, the same
+  pattern used for a brand-new account's first list.
+
+Icons throughout the header/menu are `@phosphor-icons/react` components
+(`CaretDown`, `DotsThreeVertical`, `Copy`, `Trash`), not the text glyphs
+(`▾`/`⋮`) the original UI design spec assumed — a decision made once the
+header was actually implemented, see
+`docs/superpowers/specs/2026-07-01-list-header-menu-design.md`. That spec also
+documents two deliberately deferred pieces: a sync-status line in the menu
+("Синхронизировано только что" / "N в очереди") waits on a client-side
+offline-change queue that doesn't exist yet, and there's no screen to redeem
+an invite/link code from a shared link — only the generating side is built,
+accepting a code is a separate future task.
 
 `steiger.config.ts` disables two rules from `@feature-sliced/steiger-plugin`'s
 `recommended` preset: `fsd/insignificant-slice` (every feature/widget here is
