@@ -7,8 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm workspace monorepo (Node >=22). Install with `pnpm install`.
 
 - `pnpm dev:server` — run `@kupi/server` with `tsx watch` (port 3000, override via `PORT`)
-- `pnpm dev:client` — run `@kupi/client` via Vite
+- `pnpm dev:client` — run `@kupi/client` via Vite (dev-proxies `/health`, `/accounts`,
+  `/categories`, `/lists`, `/link-codes`, `/link`, `/suggestions` to the server on
+  port 3000, so client and server share one origin in dev — no CORS needed)
 - `pnpm build` — build the client (`vite build`)
+- `pnpm --filter @kupi/client fsd-lint` — `steiger` FSD layer-boundary lint (see below)
 - `pnpm test` — run the server test suite (Node's built-in test runner via `tsx`)
 - `pnpm lint` — `oxlint .`
 - `pnpm format` — `oxfmt .`
@@ -31,7 +34,7 @@ Three pnpm workspaces under `packages/`:
 
 - **`shared`** — zod schemas and inferred types shared between server and client (`Account`, `List`, `Item`, `ItemChange`, sync request/response, `Bootstrap`). This is the single source of truth for the wire format; both server routes and (eventually) client code import from `@kupi/shared`.
 - **`server`** — Fastify + `better-sqlite3` backend. All feature code.
-- **`client`** — React + Vite PWA. Currently a bare scaffold (`App.tsx`/`main.tsx`), no real UI yet.
+- **`client`** — React + Vite PWA. First vertical slice implemented: a single active shopping-list screen (add/check/edit/delete items) talking directly to the server's REST API, built as Feature-Sliced Design.
 
 Both `server` and `client` use a `@/*` → `./src/*` tsconfig path alias; `tsx` resolves it directly at runtime, no bundler step needed for the server.
 
@@ -110,5 +113,55 @@ domain's Kysely `Selectable<Table>` result already matches its `@kupi/shared`
 zod type once `CamelCasePlugin` handles the casing.
 
 See `docs/backend-known-issues.md` for the current list of deliberately-deferred backend issues (idempotency key scope, cookie renewal on rejected requests, category-clear sentinel, purge sweeps, token rotation, etc.) — check it before "fixing" something that looks like a bug but was a scoped MVP tradeoff.
+
+### Client design (`packages/client/src`)
+
+Feature-Sliced Design, all 6 layers (`app → pages → widgets → features →
+entities → shared`), import only "downward" through a slice's public API
+(`index.ts`) — enforced by `steiger` (`pnpm --filter @kupi/client fsd-lint`,
+config in `packages/client/steiger.config.ts`). State is plain `useState`
+lifted into `widgets/list-screen/ui/ListScreen.tsx`, no Context/store/TanStack
+Query; data access is bare `fetch` via `shared/api/client.ts`'s `get`/`post`.
+
+- **`shared/`** — `api/client.ts` (thin `fetch` wrapper + `ApiError`),
+  `config/env.ts` (`API_BASE_URL`, currently `''` — relative paths + the Vite
+  dev-proxy keep client and server on one origin; revisit once they're
+  deployed separately), `lib/ids.ts` (`generateId`, wraps
+  `crypto.randomUUID()`). `api/` and `config/` each have a public-API
+  `index.ts` — required by `steiger`'s `fsd/public-api` rule, so every other
+  slice imports `@/shared/api`/`@/shared/config`, never the deep path.
+- **`entities/`** — `list` (`getLists`/`createAccount`), `category`
+  (`getCategories` + `CategoryIcon`), `item` (`syncItems`, `mergeItems`
+  merges a sync delta into the local item list by id, filtering tombstones;
+  `ItemRow`, a read-only row). `ItemRow` deliberately does **not** import
+  `entities/category`'s `CategoryIcon` directly — that would be a same-layer
+  cross-entity import, which `steiger`'s `fsd/no-cross-imports` forbids.
+  Instead it takes a `categoryIcon: ReactNode` prop slot, filled in by
+  `widgets/list-screen` (which sits above both entities).
+- **`features/`** — `toggle-item` (flip `checked`), `edit-item` (quantity
+  stepper, category chips, delete — bundled as one slice since it's one UX
+  scene, the "expanded row"), `add-item` (name input with autocomplete
+  suggestions from `GET /suggestions`; suggestions are name+count only — the
+  backend's `item_frequency` table doesn't store category, so picking one
+  just fills the text field, it doesn't set a category or create the item).
+- **`widgets/list-screen`** — composes everything above into the actual
+  screen: owns `items`/`lastSeenSeq`/`expandedItemId` state, does the initial
+  sync fetch on mount (`useEffect` deps deliberately `[list.id]` only, not
+  `onSynced` — mount-per-list is intentional, not a missed dependency), and
+  toggles each row between `ItemRow` and `features/edit-item`'s `ItemEditor`
+  by `expandedItemId`.
+- **`pages/list-screen`** + **`app/App.tsx`** — bootstrap flow: `GET /lists` +
+  `GET /categories` in parallel; a `401` (brand-new device, no `kupi_dt`
+  cookie yet) falls back to `POST /accounts`, which creates the
+  account/device/first-list and returns the full `Bootstrap` in one call. The
+  bootstrap effect is guarded with a `useRef` flag against React
+  `StrictMode`'s dev-mode double-invoke, which would otherwise call
+  `POST /accounts` twice on a fresh device and create two accounts.
+
+`steiger.config.ts` disables two rules from `@feature-sliced/steiger-plugin`'s
+`recommended` preset: `fsd/insignificant-slice` (every feature/widget here is
+used exactly once — expected for a single-screen first slice, not a design
+smell) and `fsd/repetitive-naming` (the `*-item` feature names are the
+clearest domain vocabulary available, the rule only sees the repeated word).
 
 Design/planning docs live under `docs/superpowers/` (specs and plans); they capture the reasoning behind the current schema and protocol in more depth than inline comments do.
