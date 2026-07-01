@@ -5,6 +5,7 @@ import type { List } from '@kupi/shared';
 import { CodeBodySchema, ListParamsSchema, NameBodySchema } from '@kupi/shared';
 
 import {
+  deleteList,
   findListById,
   findListInviteByCode,
   findListsForAccount,
@@ -13,6 +14,7 @@ import {
   insertListMember,
   isMember,
   isOwner,
+  removeListMember,
   updateListName,
 } from '@/lists/repository';
 import { newCode, newId } from '@/shared/ids';
@@ -99,6 +101,25 @@ export function listRoutes(app: FastifyInstance): void {
         role: 'member',
       });
       return findListById(app.db, invite.listId);
+    },
+  );
+
+  // DELETE /lists/:id — владелец удаляет список целиком, участник выходит из него
+  typedApp.delete(
+    '/lists/:id',
+    { schema: { params: ListParamsSchema } },
+    async (req, reply) => {
+      if (!(await isMember(app.db, req.params.id, req.accountId))) {
+        return reply.code(404).send({ error: 'not_found' });
+      }
+      if (await isOwner(app.db, req.params.id, req.accountId)) {
+        await app.db.transaction().execute(async (trx) => {
+          await deleteList(trx, req.params.id);
+        });
+      } else {
+        await removeListMember(app.db, req.params.id, req.accountId);
+      }
+      return reply.code(204).send();
     },
   );
 }

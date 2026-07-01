@@ -90,3 +90,125 @@ test('POST /lists with an empty name is rejected by validation (400)', async () 
   assert.equal(res.statusCode, 400);
   await app.close();
 });
+
+test('owner deletes list — gone for owner and all members', async () => {
+  const app = makeApp();
+  const owner = await signup(app);
+  const guest = await signup(app);
+  const listId = owner.bootstrap.lists[0]!.id;
+
+  const inviteRes = await app.inject({
+    method: 'POST',
+    url: `/lists/${listId}/invites`,
+    headers: { cookie: owner.cookie },
+  });
+  const { code } = inviteRes.json() as { code: string };
+  await app.inject({
+    method: 'POST',
+    url: '/lists/join',
+    headers: { cookie: guest.cookie },
+    payload: { code },
+  });
+
+  const deleteRes = await app.inject({
+    method: 'DELETE',
+    url: `/lists/${listId}`,
+    headers: { cookie: owner.cookie },
+  });
+  assert.equal(deleteRes.statusCode, 204);
+
+  const ownerLists = (
+    await app.inject({
+      method: 'GET',
+      url: '/lists',
+      headers: { cookie: owner.cookie },
+    })
+  ).json() as List[];
+  assert.equal(
+    ownerLists.some((l) => l.id === listId),
+    false,
+  );
+
+  const guestLists = (
+    await app.inject({
+      method: 'GET',
+      url: '/lists',
+      headers: { cookie: guest.cookie },
+    })
+  ).json() as List[];
+  assert.equal(
+    guestLists.some((l) => l.id === listId),
+    false,
+  );
+
+  await app.close();
+});
+
+test('member leaves list — list still exists for owner', async () => {
+  const app = makeApp();
+  const owner = await signup(app);
+  const guest = await signup(app);
+  const listId = owner.bootstrap.lists[0]!.id;
+
+  const inviteRes = await app.inject({
+    method: 'POST',
+    url: `/lists/${listId}/invites`,
+    headers: { cookie: owner.cookie },
+  });
+  const { code } = inviteRes.json() as { code: string };
+  await app.inject({
+    method: 'POST',
+    url: '/lists/join',
+    headers: { cookie: guest.cookie },
+    payload: { code },
+  });
+
+  const leaveRes = await app.inject({
+    method: 'DELETE',
+    url: `/lists/${listId}`,
+    headers: { cookie: guest.cookie },
+  });
+  assert.equal(leaveRes.statusCode, 204);
+
+  const guestLists = (
+    await app.inject({
+      method: 'GET',
+      url: '/lists',
+      headers: { cookie: guest.cookie },
+    })
+  ).json() as List[];
+  assert.equal(
+    guestLists.some((l) => l.id === listId),
+    false,
+  );
+
+  const ownerLists = (
+    await app.inject({
+      method: 'GET',
+      url: '/lists',
+      headers: { cookie: owner.cookie },
+    })
+  ).json() as List[];
+  assert.equal(
+    ownerLists.some((l) => l.id === listId),
+    true,
+  );
+
+  await app.close();
+});
+
+test('non-member cannot delete list (404)', async () => {
+  const app = makeApp();
+  const owner = await signup(app);
+  const outsider = await signup(app);
+  const listId = owner.bootstrap.lists[0]!.id;
+
+  const res = await app.inject({
+    method: 'DELETE',
+    url: `/lists/${listId}`,
+    headers: { cookie: outsider.cookie },
+  });
+  assert.equal(res.statusCode, 404);
+
+  await app.close();
+});
