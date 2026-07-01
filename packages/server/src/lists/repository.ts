@@ -153,7 +153,10 @@ export async function removeListMember(
 }
 
 /** Считает число участников списка. */
-export async function countListMembers(db: Db, listId: string): Promise<number> {
+export async function countListMembers(
+  db: Db,
+  listId: string,
+): Promise<number> {
   const rows = await db
     .selectFrom('listMembers')
     .select('accountId')
