@@ -29,21 +29,27 @@ export function buildApp(sqlite: Database.Database): FastifyInstance {
   // Регистрируем cookie-аутентификацию со sliding renewal
   registerAuth(app);
 
-  // Регистрируем роуты для аккаунтов
-  accountRoutes(app);
+  // Все роуты живут под общим префиксом /api
+  app.register(
+    async (api) => {
+      // Регистрируем роуты для аккаунтов
+      accountRoutes(api);
 
-  // Регистрируем роуты для связывания устройств
-  linkRoutes(app);
+      // Регистрируем роуты для связывания устройств
+      linkRoutes(api);
 
-  // Регистрируем роуты для списков покупок
-  listRoutes(app);
+      // Регистрируем роуты для списков покупок
+      listRoutes(api);
 
-  // Регистрируем роуты для синхронизации и подсказок
-  syncRoutes(app);
+      // Регистрируем роуты для синхронизации и подсказок
+      syncRoutes(api);
 
-  app.get('/health', async () => {
-    return { status: 'ok' };
-  });
+      api.get('/health', async () => {
+        return { status: 'ok' };
+      });
+    },
+    { prefix: '/api' },
+  );
 
   return app;
 }

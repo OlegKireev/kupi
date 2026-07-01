@@ -11,7 +11,7 @@ test("GET /lists returns only the caller's lists", async () => {
 
   const res = await app.inject({
     method: 'GET',
-    url: '/lists',
+    url: '/api/lists',
     headers: { cookie: a.cookie },
   });
   const lists = res.json() as List[];
@@ -29,14 +29,14 @@ test('owner invites, second account joins and gains access', async () => {
 
   const inviteRes = await app.inject({
     method: 'POST',
-    url: `/lists/${listId}/invites`,
+    url: `/api/lists/${listId}/invites`,
     headers: { cookie: owner.cookie },
   });
   const { code } = inviteRes.json() as { code: string };
 
   const joinRes = await app.inject({
     method: 'POST',
-    url: '/lists/join',
+    url: '/api/lists/join',
     headers: { cookie: guest.cookie },
     payload: { code },
   });
@@ -45,7 +45,7 @@ test('owner invites, second account joins and gains access', async () => {
   const guestLists = (
     await app.inject({
       method: 'GET',
-      url: '/lists',
+      url: '/api/lists',
       headers: { cookie: guest.cookie },
     })
   ).json() as List[];
@@ -62,7 +62,7 @@ test('non-member cannot rename or invite (isolation, 404)', async () => {
 
   const rename = await app.inject({
     method: 'PATCH',
-    url: `/lists/${listId}`,
+    url: `/api/lists/${listId}`,
     headers: { cookie: outsider.cookie },
     payload: { name: 'взлом' },
   });
@@ -70,7 +70,7 @@ test('non-member cannot rename or invite (isolation, 404)', async () => {
 
   const invite = await app.inject({
     method: 'POST',
-    url: `/lists/${listId}/invites`,
+    url: `/api/lists/${listId}/invites`,
     headers: { cookie: outsider.cookie },
   });
   assert.equal(invite.statusCode, 404);
@@ -83,7 +83,7 @@ test('POST /lists with an empty name is rejected by validation (400)', async () 
   const { cookie } = await signup(app);
   const res = await app.inject({
     method: 'POST',
-    url: '/lists',
+    url: '/api/lists',
     headers: { cookie },
     payload: { name: '' },
   });
@@ -99,20 +99,20 @@ test('owner deletes list — gone for owner and all members', async () => {
 
   const inviteRes = await app.inject({
     method: 'POST',
-    url: `/lists/${listId}/invites`,
+    url: `/api/lists/${listId}/invites`,
     headers: { cookie: owner.cookie },
   });
   const { code } = inviteRes.json() as { code: string };
   await app.inject({
     method: 'POST',
-    url: '/lists/join',
+    url: '/api/lists/join',
     headers: { cookie: guest.cookie },
     payload: { code },
   });
 
   const deleteRes = await app.inject({
     method: 'DELETE',
-    url: `/lists/${listId}`,
+    url: `/api/lists/${listId}`,
     headers: { cookie: owner.cookie },
   });
   assert.equal(deleteRes.statusCode, 204);
@@ -120,7 +120,7 @@ test('owner deletes list — gone for owner and all members', async () => {
   const ownerLists = (
     await app.inject({
       method: 'GET',
-      url: '/lists',
+      url: '/api/lists',
       headers: { cookie: owner.cookie },
     })
   ).json() as List[];
@@ -132,7 +132,7 @@ test('owner deletes list — gone for owner and all members', async () => {
   const guestLists = (
     await app.inject({
       method: 'GET',
-      url: '/lists',
+      url: '/api/lists',
       headers: { cookie: guest.cookie },
     })
   ).json() as List[];
@@ -152,20 +152,20 @@ test('member leaves list — list still exists for owner', async () => {
 
   const inviteRes = await app.inject({
     method: 'POST',
-    url: `/lists/${listId}/invites`,
+    url: `/api/lists/${listId}/invites`,
     headers: { cookie: owner.cookie },
   });
   const { code } = inviteRes.json() as { code: string };
   await app.inject({
     method: 'POST',
-    url: '/lists/join',
+    url: '/api/lists/join',
     headers: { cookie: guest.cookie },
     payload: { code },
   });
 
   const leaveRes = await app.inject({
     method: 'DELETE',
-    url: `/lists/${listId}`,
+    url: `/api/lists/${listId}`,
     headers: { cookie: guest.cookie },
   });
   assert.equal(leaveRes.statusCode, 204);
@@ -173,7 +173,7 @@ test('member leaves list — list still exists for owner', async () => {
   const guestLists = (
     await app.inject({
       method: 'GET',
-      url: '/lists',
+      url: '/api/lists',
       headers: { cookie: guest.cookie },
     })
   ).json() as List[];
@@ -185,7 +185,7 @@ test('member leaves list — list still exists for owner', async () => {
   const ownerLists = (
     await app.inject({
       method: 'GET',
-      url: '/lists',
+      url: '/api/lists',
       headers: { cookie: owner.cookie },
     })
   ).json() as List[];
@@ -205,7 +205,7 @@ test('non-member cannot delete list (404)', async () => {
 
   const res = await app.inject({
     method: 'DELETE',
-    url: `/lists/${listId}`,
+    url: `/api/lists/${listId}`,
     headers: { cookie: outsider.cookie },
   });
   assert.equal(res.statusCode, 404);
@@ -221,27 +221,27 @@ test('GET /lists/:id/members returns member count, grows as accounts join', asyn
 
   const before = await app.inject({
     method: 'GET',
-    url: `/lists/${listId}/members`,
+    url: `/api/lists/${listId}/members`,
     headers: { cookie: owner.cookie },
   });
   assert.deepEqual(before.json(), { count: 1 });
 
   const inviteRes = await app.inject({
     method: 'POST',
-    url: `/lists/${listId}/invites`,
+    url: `/api/lists/${listId}/invites`,
     headers: { cookie: owner.cookie },
   });
   const { code } = inviteRes.json() as { code: string };
   await app.inject({
     method: 'POST',
-    url: '/lists/join',
+    url: '/api/lists/join',
     headers: { cookie: guest.cookie },
     payload: { code },
   });
 
   const after = await app.inject({
     method: 'GET',
-    url: `/lists/${listId}/members`,
+    url: `/api/lists/${listId}/members`,
     headers: { cookie: owner.cookie },
   });
   assert.deepEqual(after.json(), { count: 2 });
@@ -257,7 +257,7 @@ test('GET /lists/:id/members is 404 for non-members', async () => {
 
   const res = await app.inject({
     method: 'GET',
-    url: `/lists/${listId}/members`,
+    url: `/api/lists/${listId}/members`,
     headers: { cookie: outsider.cookie },
   });
   assert.equal(res.statusCode, 404);

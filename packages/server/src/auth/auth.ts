@@ -24,7 +24,7 @@ export function setAuthCookie(reply: FastifyReply, token: string): void {
 }
 
 // Публичные пути, не требующие аутентификации
-const PUBLIC = new Set(['/health', '/accounts', '/link']);
+const PUBLIC = new Set(['/api/health', '/api/accounts', '/api/link']);
 
 /**
  * Регистрирует cookie-плагин и onRequest-хук для аутентификации.

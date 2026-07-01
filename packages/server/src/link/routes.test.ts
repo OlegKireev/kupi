@@ -12,7 +12,7 @@ test('device B links to account A and sees the same list', async () => {
 
   const codeRes = await app.inject({
     method: 'POST',
-    url: '/link-codes',
+    url: '/api/link-codes',
     headers: { cookie: a.cookie },
   });
   const { code } = codeRes.json() as { code: string };
@@ -20,7 +20,7 @@ test('device B links to account A and sees the same list', async () => {
 
   const linkRes = await app.inject({
     method: 'POST',
-    url: '/link',
+    url: '/api/link',
     payload: { code },
   });
   assert.equal(linkRes.statusCode, 200);
@@ -40,21 +40,21 @@ test('a link code cannot be redeemed twice', async () => {
   const a = await signup(app);
   const codeRes = await app.inject({
     method: 'POST',
-    url: '/link-codes',
+    url: '/api/link-codes',
     headers: { cookie: a.cookie },
   });
   const { code } = codeRes.json() as { code: string };
 
   const first = await app.inject({
     method: 'POST',
-    url: '/link',
+    url: '/api/link',
     payload: { code },
   });
   assert.equal(first.statusCode, 200);
 
   const second = await app.inject({
     method: 'POST',
-    url: '/link',
+    url: '/api/link',
     payload: { code },
   });
   assert.equal(second.statusCode, 400);
@@ -64,7 +64,11 @@ test('a link code cannot be redeemed twice', async () => {
 
 test('POST /link with a missing code is rejected by validation (400)', async () => {
   const app = makeApp();
-  const res = await app.inject({ method: 'POST', url: '/link', payload: {} });
+  const res = await app.inject({
+    method: 'POST',
+    url: '/api/link',
+    payload: {},
+  });
   assert.equal(res.statusCode, 400);
   await app.close();
 });

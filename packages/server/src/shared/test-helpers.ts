@@ -22,7 +22,7 @@ export function makeApp(): FastifyInstance {
 export async function signup(
   app: FastifyInstance,
 ): Promise<{ cookie: string; bootstrap: Bootstrap }> {
-  const res = await app.inject({ method: 'POST', url: '/accounts' });
+  const res = await app.inject({ method: 'POST', url: '/api/accounts' });
   const deviceCookie = res.cookies.find((cookie) => cookie.name === COOKIE)!;
   return {
     cookie: `${COOKIE}=${deviceCookie.value}`,

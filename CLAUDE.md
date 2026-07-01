@@ -7,8 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm workspace monorepo (Node >=22). Install with `pnpm install`.
 
 - `pnpm dev:server` — run `@kupi/server` with `tsx watch` (port 3000, override via `PORT`)
-- `pnpm dev:client` — run `@kupi/client` via Vite (dev-proxies `/health`, `/accounts`,
-  `/categories`, `/lists`, `/link-codes`, `/link`, `/suggestions` to the server on
+- `pnpm dev:client` — run `@kupi/client` via Vite (dev-proxies `/api` to the server on
   port 3000, so client and server share one origin in dev — no CORS needed)
 - `pnpm build` — build the client (`vite build`)
 - `pnpm --filter @kupi/client fsd-lint` — `steiger` FSD layer-boundary lint (see below)
@@ -69,21 +68,21 @@ the tables it owns), plus a test file living next to the code it covers:
 - **`auth/`** — anonymous accounts, no passwords. `auth.ts` resolves the
   `kupi_dt` device-token cookie to `request.accountId` in an `onRequest` hook
   and does sliding TTL renewal on every authenticated request; `PUBLIC` paths
-  (`/health`, `/accounts`, `/link`) skip auth. `repository.ts` owns the
+  (`/api/health`, `/api/accounts`, `/api/link`) skip auth. `repository.ts` owns the
   `devices` table.
-- **`accounts/`** — `POST /accounts` creates an account + first device + a
+- **`accounts/`** — `POST /api/accounts` creates an account + first device + a
   default list in one transaction and sets the auth cookie. `bootstrap.ts`
   builds the `{ account, lists, categories }` payload returned by both account
   creation and device linking (composes `accounts/repository.ts` and
   `lists/repository.ts`).
 - **`link/`** — device linking via a short-lived one-time code
-  (`POST /link-codes` → `POST /link`, owns the `link_codes` table).
+  (`POST /api/link-codes` → `POST /api/link`, owns the `link_codes` table).
 - **`lists/`** — list CRUD, invites, and membership. `repository.ts` owns
   `lists`, `list_members`, `list_invites`, including access control
   (`isMember`/`isOwner`, checked per-route; non-members get `404` not `403` to
   avoid leaking list existence).
 - **`sync/`** — clients push a batch of `ItemChange`s to `POST
-/lists/:id/sync` with `lastSeenSeq`, applied atomically in one Kysely
+/api/lists/:id/sync` with `lastSeenSeq`, applied atomically in one Kysely
   transaction via `merge.ts`'s `applyChange`. Semantics:
   - Idempotent via `applied_ops(client_op_id)` — replays of the same
     `clientOpId` are no-ops. **Known gap**: this key is a global PK, not
@@ -103,7 +102,7 @@ the tables it owns), plus a test file living next to the code it covers:
   - `categoryId: null` in a patch is currently indistinguishable from "field
     absent" (both mean "no change") — clearing a category isn't supported
     yet, marked with a `// ponytail:` comment in `merge.ts`.
-  - Suggestions (`GET /suggestions`) are backed by `item_frequency`,
+  - Suggestions (`GET /api/suggestions`) are backed by `item_frequency`,
     incremented only when a _new_ named item is created (not on edits), keyed
     by `(account_id, normalized_name)`.
 
@@ -143,7 +142,7 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
 - **`features/`** — `toggle-item` (flip `checked`), `edit-item` (quantity
   stepper, category chips, delete — bundled as one slice since it's one UX
   scene, the "expanded row"), `add-item` (name input with autocomplete
-  suggestions from `GET /suggestions`; suggestions are name+count only — the
+  suggestions from `GET /api/suggestions`; suggestions are name+count only — the
   backend's `item_frequency` table doesn't store category, so picking one
   just fills the text field, it doesn't set a category or create the item).
 - **`widgets/list-screen`** — composes everything above into the actual
@@ -160,27 +159,27 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   switch/refresh callbacks are all passed down from `app/App.tsx`.
 - **`features/list-menu`** — the "⋮" `ActionIcon`, one Mantine `Menu` bundling
   the whole "list settings" scene (same one-slice-per-UX-scene pattern as
-  `edit-item`): "Пригласить" (`POST /lists/:id/invites`) and "Подключить
-  устройство" (`POST /link-codes`, its own `api/link-code-api.ts` since
+  `edit-item`): "Пригласить" (`POST /api/lists/:id/invites`) and "Подключить
+  устройство" (`POST /api/link-codes`, its own `api/link-code-api.ts` since
   device-linking isn't list domain — same reasoning as `add-item`'s
   `suggestions-api.ts`) both open the same code-`Modal` shape with a
   "Копировать" button (`navigator.clipboard.writeText`); "Участники (N)" is a
   disabled label that lazy-loads `getMemberCount` on menu open; "Переименовать
   список" opens a `Modal` pre-filled with the current name; "Удалить/покинуть
   список" is a single confirm-`Modal` and a single `deleteList` call
-  regardless of role — `DELETE /lists/:id`'s owner-deletes-vs-member-leaves
+  regardless of role — `DELETE /api/lists/:id`'s owner-deletes-vs-member-leaves
   branching happens entirely server-side, the client never checks who owns
   the list.
-- **`pages/list-screen`** + **`app/App.tsx`** — bootstrap flow: `GET /lists` +
-  `GET /categories` in parallel; a `401` (brand-new device, no `kupi_dt`
-  cookie yet) falls back to `POST /accounts`, which creates the
+- **`pages/list-screen`** + **`app/App.tsx`** — bootstrap flow: `GET /api/lists` +
+  `GET /api/categories` in parallel; a `401` (brand-new device, no `kupi_dt`
+  cookie yet) falls back to `POST /api/accounts`, which creates the
   account/device/first-list and returns the full `Bootstrap` in one call. The
   bootstrap effect is guarded with a `useRef` flag against React
   `StrictMode`'s dev-mode double-invoke, which would otherwise call
-  `POST /accounts` twice on a fresh device and create two accounts.
+  `POST /api/accounts` twice on a fresh device and create two accounts.
   `lists`/`activeListId` (not a single `list`) live here so the header can
   switch between lists; any list mutation (create/rename/delete-leave) calls
-  a shared `refreshLists(selectId?)` that just refetches `GET /lists` — no
+  a shared `refreshLists(selectId?)` that just refetches `GET /api/lists` — no
   manual state patching, this isn't a hot path. If a delete/leave empties
   `lists`, `refreshLists` creates a fallback "Мои покупки" list, the same
   pattern used for a brand-new account's first list.

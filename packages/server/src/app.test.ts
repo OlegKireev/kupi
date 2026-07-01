@@ -8,7 +8,7 @@ test('GET /health returns ok', async () => {
   const sqlite = new Database(':memory:');
   const app = buildApp(sqlite);
 
-  const res = await app.inject({ method: 'GET', url: '/health' });
+  const res = await app.inject({ method: 'GET', url: '/api/health' });
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.json(), { status: 'ok' });

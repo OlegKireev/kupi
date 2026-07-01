@@ -14,7 +14,7 @@ function sync(
 ) {
   return app.inject({
     method: 'POST',
-    url: `/lists/${listId}/sync`,
+    url: `/api/lists/${listId}/sync`,
     headers: { cookie },
     payload: body,
   });
@@ -219,7 +219,7 @@ test('adding items feeds frequency-ranked suggestions', async () => {
 
   const res = await app.inject({
     method: 'GET',
-    url: '/suggestions?q=мол',
+    url: '/api/suggestions?q=мол',
     headers: { cookie: u.cookie },
   });
   const rows = res.json() as Array<{ name: string; count: number }>;

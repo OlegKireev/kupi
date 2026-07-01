@@ -39,13 +39,13 @@ test('GET /categories requires auth and returns the preset', async () => {
   const { cookie } = await signup(app);
 
   // Без куки: 401
-  const unauth = await app.inject({ method: 'GET', url: '/categories' });
+  const unauth = await app.inject({ method: 'GET', url: '/api/categories' });
   assert.equal(unauth.statusCode, 401);
 
   // С куки: 200 и 9 категорий
   const res = await app.inject({
     method: 'GET',
-    url: '/categories',
+    url: '/api/categories',
     headers: { cookie },
   });
   assert.equal(res.statusCode, 200);
