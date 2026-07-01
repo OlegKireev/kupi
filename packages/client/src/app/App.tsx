@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Category, List } from '@kupi/shared';
-import { createAccount, getLists } from '@/entities/list';
+import { createAccount, createList, getLists } from '@/entities/list';
 import { getCategories } from '@/entities/category';
 import { ListScreenPage } from '@/pages/list-screen';
 import { ApiError } from '@/shared/api';
 
 export function App() {
-  const [list, setList] = useState<List | null>(null);
+  const [lists, setLists] = useState<List[]>([]);
+  const [activeListId, setActiveListId] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const bootstrapped = useRef(false);
 
@@ -15,13 +16,15 @@ export function App() {
     bootstrapped.current = true;
     (async () => {
       try {
-        const [lists, cats] = await Promise.all([getLists(), getCategories()]);
-        setList(lists[0]!);
+        const [fetchedLists, cats] = await Promise.all([getLists(), getCategories()]);
+        setLists(fetchedLists);
+        setActiveListId(fetchedLists[0]?.id ?? null);
         setCategories(cats);
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
           const bootstrap = await createAccount();
-          setList(bootstrap.lists[0]!);
+          setLists(bootstrap.lists);
+          setActiveListId(bootstrap.lists[0]?.id ?? null);
           setCategories(bootstrap.categories);
           return;
         }
@@ -30,6 +33,34 @@ export function App() {
     })();
   }, []);
 
-  if (!list) return null;
-  return <ListScreenPage list={list} categories={categories} />;
+  // Перезапрашивает GET /lists после мутации (создание/переименование/удаление
+  // списка) — не hot path, ручной патч состояния не нужен. Если после
+  // удаления/выхода списков не осталось, создаёт список по умолчанию — тот же
+  // паттерн, что при онбординге нового аккаунта.
+  const refreshLists = async (selectId?: string): Promise<void> => {
+    let fetchedLists = await getLists();
+    if (fetchedLists.length === 0) {
+      fetchedLists = [await createList('Мои покупки')];
+    }
+    setLists(fetchedLists);
+    setActiveListId((current) => {
+      const preferred = selectId ?? current;
+      return preferred && fetchedLists.some((l) => l.id === preferred)
+        ? preferred
+        : fetchedLists[0]!.id;
+    });
+  };
+
+  const activeList = lists.find((l) => l.id === activeListId);
+  if (!activeList) return null;
+
+  return (
+    <ListScreenPage
+      list={activeList}
+      lists={lists}
+      categories={categories}
+      onSwitchList={setActiveListId}
+      onListsChanged={refreshLists}
+    />
+  );
 }
