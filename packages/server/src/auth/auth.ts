@@ -1,6 +1,8 @@
 import cookie from '@fastify/cookie';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 
+import { findDeviceByToken } from '@/auth/repository';
+
 export const COOKIE = 'kupi_dt';
 const MAX_AGE = 400 * 24 * 60 * 60; // 400 дней — cap Chrome для Max-Age
 
@@ -40,18 +42,14 @@ export function registerAuth(app: FastifyInstance): void {
 
     // Резолвим device-токен из cookie
     const token = req.cookies[COOKIE];
-    const device = token
-      ? (app.db
-          .prepare('SELECT account_id FROM devices WHERE token = ?')
-          .get(token) as { account_id: string } | undefined)
-      : undefined;
+    const device = token ? await findDeviceByToken(app.db, token) : undefined;
 
     if (!device) {
       return reply.code(401).send({ error: 'unauthorized' });
     }
 
     // Привязываем account_id к реквесту
-    req.accountId = device.account_id;
+    req.accountId = device.accountId;
 
     // Sliding renewal: продлеваем TTL куки, значение то же
     setAuthCookie(reply, token!);

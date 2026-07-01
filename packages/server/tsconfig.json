@@ -6,5 +6,5 @@
     "declaration": false,
     "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["src", "test"]
+  "include": ["src", "scripts"]
 }

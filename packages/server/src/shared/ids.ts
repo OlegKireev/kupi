@@ -13,18 +13,19 @@ const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
  * Генерирует случайный буквенно-цифровой код заданной длины.
  * По умолчанию 6 символов (для invite/link кодов).
  */
-export function newCode(len = 6): string {
-  const bytes = randomBytes(len);
-  let s = '';
-  for (let i = 0; i < len; i++) {
+export function newCode(length = 6): string {
+  const bytes = randomBytes(length);
+  let result = '';
+  for (let i = 0; i < length; i++) {
     // На 32-символьном алфавите modulo-bias пренебрежимо мал
-    s += ALPHABET[bytes[i]! % ALPHABET.length];
+    result += ALPHABET[bytes[i]! % ALPHABET.length];
   }
-  return s;
+  return result;
 }
 
 /**
  * Нормализует название для поиска и подсказок:
  * обрезает пробелы и приводит в нижний регистр.
  */
-export const normalizeName = (s: string): string => s.trim().toLowerCase();
+export const normalizeName = (name: string): string =>
+  name.trim().toLowerCase();

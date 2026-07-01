@@ -1,24 +1,28 @@
-import type { Db } from '@/db';
+import type Database from 'better-sqlite3';
 
 // DDL для всех таблиц: идемпотентная инициализация схемы БД
+// NOT NULL на PRIMARY KEY прописан явно: в отличие от Postgres, SQLite не
+// гарантирует not-null для TEXT PRIMARY KEY без явного NOT NULL — без него
+// kysely-codegen (см. scripts/generate-db-types.ts) честно генерирует
+// `id: string | null` для всех таблиц.
 const DDL = `
 CREATE TABLE IF NOT EXISTS accounts (
-  id TEXT PRIMARY KEY,
+  id TEXT PRIMARY KEY NOT NULL,
   created_at INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS devices (
-  id TEXT PRIMARY KEY,
+  id TEXT PRIMARY KEY NOT NULL,
   account_id TEXT NOT NULL REFERENCES accounts(id),
   token TEXT NOT NULL UNIQUE,
   created_at INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS link_codes (
-  code TEXT PRIMARY KEY,
+  code TEXT PRIMARY KEY NOT NULL,
   account_id TEXT NOT NULL REFERENCES accounts(id),
   expires_at INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS lists (
-  id TEXT PRIMARY KEY,
+  id TEXT PRIMARY KEY NOT NULL,
   name TEXT NOT NULL,
   owner_account_id TEXT NOT NULL REFERENCES accounts(id),
   seq INTEGER NOT NULL DEFAULT 0,
@@ -31,12 +35,12 @@ CREATE TABLE IF NOT EXISTS list_members (
   PRIMARY KEY (list_id, account_id)
 );
 CREATE TABLE IF NOT EXISTS list_invites (
-  code TEXT PRIMARY KEY,
+  code TEXT PRIMARY KEY NOT NULL,
   list_id TEXT NOT NULL REFERENCES lists(id),
   expires_at INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS items (
-  id TEXT PRIMARY KEY,
+  id TEXT PRIMARY KEY NOT NULL,
   list_id TEXT NOT NULL REFERENCES lists(id),
   name TEXT NOT NULL DEFAULT '',
   quantity INTEGER NOT NULL DEFAULT 1,
@@ -48,10 +52,10 @@ CREATE TABLE IF NOT EXISTS items (
 );
 CREATE INDEX IF NOT EXISTS items_list_version ON items(list_id, version);
 CREATE TABLE IF NOT EXISTS applied_ops (
-  client_op_id TEXT PRIMARY KEY
+  client_op_id TEXT PRIMARY KEY NOT NULL
 );
 CREATE TABLE IF NOT EXISTS categories (
-  id TEXT PRIMARY KEY,
+  id TEXT PRIMARY KEY NOT NULL,
   name TEXT NOT NULL,
   color TEXT NOT NULL,
   icon TEXT NOT NULL,
@@ -82,15 +86,15 @@ const CATEGORIES: Array<[string, string, string, string]> = [
  * Инициализирует схему БД: создаёт таблицы (идемпотентно) и засеивает категории.
  * Можно вызывать несколько раз без ошибок (INSERT OR IGNORE).
  */
-export function initSchema(db: Db): void {
-  db.pragma('foreign_keys = ON');
-  db.exec(DDL);
+export function initSchema(sqlite: Database.Database): void {
+  sqlite.pragma('foreign_keys = ON');
+  sqlite.exec(DDL);
 
   // Засеиваем пресетные категории со стабильными id
-  const insert = db.prepare(
+  const insert = sqlite.prepare(
     'INSERT OR IGNORE INTO categories (id, name, color, icon, sort) VALUES (?, ?, ?, ?, ?)',
   );
-  CATEGORIES.forEach((c, i) => insert.run(c[0], c[1], c[2], c[3], i));
+  CATEGORIES.forEach((category, sort) => insert.run(...category, sort));
 
-  db.pragma('user_version = 1');
+  sqlite.pragma('user_version = 1');
 }

@@ -5,15 +5,15 @@ import { test } from 'node:test';
 import { buildApp } from '@/app';
 
 test('buildApp seeds the 9 preset categories', async () => {
-  const db = new Database(':memory:');
-  buildApp(db);
+  const sqlite = new Database(':memory:');
+  buildApp(sqlite);
 
-  const row = db.prepare('SELECT COUNT(*) AS n FROM categories').get() as {
+  const row = sqlite.prepare('SELECT COUNT(*) AS n FROM categories').get() as {
     n: number;
   };
   assert.equal(row.n, 9);
 
-  const other = db
+  const other = sqlite
     .prepare("SELECT name FROM categories WHERE id = 'other'")
     .get() as {
     name: string;
@@ -22,11 +22,11 @@ test('buildApp seeds the 9 preset categories', async () => {
 });
 
 test('initSchema is idempotent (buildApp twice keeps 9 categories)', async () => {
-  const db = new Database(':memory:');
-  buildApp(db);
-  buildApp(db);
+  const sqlite = new Database(':memory:');
+  buildApp(sqlite);
+  buildApp(sqlite);
 
-  const row = db.prepare('SELECT COUNT(*) AS n FROM categories').get() as {
+  const row = sqlite.prepare('SELECT COUNT(*) AS n FROM categories').get() as {
     n: number;
   };
   assert.equal(row.n, 9);

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import type { List } from '@kupi/shared';
 
-import { makeApp, signup } from './helpers';
+import { makeApp, signup } from '@/shared/test-helpers';
 
 test("GET /lists returns only the caller's lists", async () => {
   const app = makeApp();

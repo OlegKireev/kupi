@@ -5,8 +5,8 @@ import { test } from 'node:test';
 import { buildApp } from '@/app';
 
 test('GET /health returns ok', async () => {
-  const db = new Database(':memory:');
-  const app = buildApp(db);
+  const sqlite = new Database(':memory:');
+  const app = buildApp(sqlite);
 
   const res = await app.inject({ method: 'GET', url: '/health' });
 

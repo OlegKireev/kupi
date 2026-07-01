@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { makeApp, signup } from './helpers';
+import { makeApp, signup } from '@/shared/test-helpers';
 
 test('POST /accounts creates account, cookie, and a default list', async () => {
   const app = makeApp();

@@ -2,10 +2,12 @@ import type { FastifyInstance } from 'fastify';
 
 import type { Bootstrap, Category } from '@kupi/shared';
 
-import { setAuthCookie } from '@/auth';
-import { buildBootstrap } from '@/bootstrap';
-import { newId, newToken } from '@/ids';
-import { rowToCategory } from '@/map';
+import { buildBootstrap } from '@/accounts/bootstrap';
+import { findCategories, insertAccount } from '@/accounts/repository';
+import { setAuthCookie } from '@/auth/auth';
+import { insertDevice } from '@/auth/repository';
+import { insertList, insertListMember } from '@/lists/repository';
+import { newId, newToken } from '@/shared/ids';
 
 /**
  * POST /accounts: Создаёт новый анонимный аккаунт
@@ -28,33 +30,29 @@ export function accountRoutes(app: FastifyInstance): void {
     const listId = newId();
 
     // Вся логика в одной транзакции
-    app.db.transaction(() => {
+    await app.db.transaction().execute(async (trx) => {
       // Создаём аккаунт
-      app.db
-        .prepare('INSERT INTO accounts (id, created_at) VALUES (?, ?)')
-        .run(accountId, now);
+      await insertAccount(trx, { id: accountId, createdAt: now });
 
       // Создаём первое устройство с токеном
-      app.db
-        .prepare(
-          'INSERT INTO devices (id, account_id, token, created_at) VALUES (?, ?, ?, ?)',
-        )
-        .run(deviceId, accountId, token, now);
+      await insertDevice(trx, {
+        id: deviceId,
+        accountId,
+        token,
+        createdAt: now,
+      });
 
       // Создаём дефолтный список "Мои покупки"
-      app.db
-        .prepare(
-          'INSERT INTO lists (id, name, owner_account_id, seq, created_at) VALUES (?, ?, ?, 0, ?)',
-        )
-        .run(listId, 'Мои покупки', accountId, now);
+      await insertList(trx, {
+        id: listId,
+        name: 'Мои покупки',
+        ownerAccountId: accountId,
+        createdAt: now,
+      });
 
       // Добавляем аккаунт как owner в дефолтный список
-      app.db
-        .prepare(
-          "INSERT INTO list_members (list_id, account_id, role) VALUES (?, ?, 'owner')",
-        )
-        .run(listId, accountId);
-    })();
+      await insertListMember(trx, { listId, accountId, role: 'owner' });
+    });
 
     // Ставим auth cookie
     setAuthCookie(reply, token);
@@ -66,8 +64,6 @@ export function accountRoutes(app: FastifyInstance): void {
 
   // GET /categories: публичный пресет (требует аутентификацию, см. registerAuth)
   app.get('/categories', async (): Promise<Category[]> => {
-    return (
-      app.db.prepare('SELECT * FROM categories ORDER BY sort').all() as any[]
-    ).map(rowToCategory);
+    return findCategories(app.db);
   });
 }

@@ -4,7 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Bootstrap } from '@kupi/shared';
 
 import { buildApp } from '@/app';
-import { COOKIE } from '@/auth';
+import { COOKIE } from '@/auth/auth';
 
 /**
  * Создаёт новый Fastify app с in-memory БД.
@@ -23,6 +23,9 @@ export async function signup(
   app: FastifyInstance,
 ): Promise<{ cookie: string; bootstrap: Bootstrap }> {
   const res = await app.inject({ method: 'POST', url: '/accounts' });
-  const c = res.cookies.find((x) => x.name === COOKIE)!;
-  return { cookie: `${COOKIE}=${c.value}`, bootstrap: res.json() as Bootstrap };
+  const deviceCookie = res.cookies.find((cookie) => cookie.name === COOKIE)!;
+  return {
+    cookie: `${COOKIE}=${deviceCookie.value}`,
+    bootstrap: res.json() as Bootstrap,
+  };
 }

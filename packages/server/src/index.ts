@@ -1,8 +1,8 @@
 import { buildApp } from '@/app';
-import { openDb } from '@/db';
+import { openSqlite } from '@/db/connection';
 
-const db = openDb();
-const app = buildApp(db);
+const sqlite = openSqlite();
+const app = buildApp(sqlite);
 
 const port = Number(process.env.PORT ?? 3000);
 

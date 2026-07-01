@@ -4,7 +4,7 @@ import { test } from 'node:test';
 
 import type { SyncResponse } from '@kupi/shared';
 
-import { makeApp, signup } from './helpers';
+import { makeApp, signup } from '@/shared/test-helpers';
 
 function sync(
   app: FastifyInstance,

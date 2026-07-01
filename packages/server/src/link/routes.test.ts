@@ -3,8 +3,8 @@ import { test } from 'node:test';
 
 import type { Bootstrap } from '@kupi/shared';
 
-import { COOKIE } from '@/auth';
-import { makeApp, signup } from './helpers';
+import { COOKIE } from '@/auth/auth';
+import { makeApp, signup } from '@/shared/test-helpers';
 
 test('device B links to account A and sees the same list', async () => {
   const app = makeApp();
@@ -29,7 +29,7 @@ test('device B links to account A and sees the same list', async () => {
   assert.equal(bBootstrap.account.id, a.bootstrap.account.id);
   assert.equal(bBootstrap.lists[0]?.id, a.bootstrap.lists[0]?.id);
 
-  const bCookie = linkRes.cookies.find((c) => c.name === COOKIE);
+  const bCookie = linkRes.cookies.find((cookie) => cookie.name === COOKIE);
   assert.ok(bCookie); // B получил собственный device-токен
 
   await app.close();
