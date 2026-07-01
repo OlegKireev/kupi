@@ -1,0 +1,32 @@
+import { useEffect, useState } from 'react';
+import type { Category, List } from '@kupi/shared';
+import { createAccount, getLists } from '@/entities/list';
+import { getCategories } from '@/entities/category';
+import { ListScreenPage } from '@/pages/list-screen';
+import { ApiError } from '@/shared/api/client';
+
+export function App() {
+  const [list, setList] = useState<List | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [lists, cats] = await Promise.all([getLists(), getCategories()]);
+        setList(lists[0]!);
+        setCategories(cats);
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          const bootstrap = await createAccount();
+          setList(bootstrap.lists[0]!);
+          setCategories(bootstrap.categories);
+          return;
+        }
+        throw err;
+      }
+    })();
+  }, []);
+
+  if (!list) return null;
+  return <ListScreenPage list={list} categories={categories} />;
+}
