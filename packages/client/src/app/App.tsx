@@ -3,7 +3,7 @@ import type { Category, List } from '@kupi/shared';
 import { createAccount, getLists } from '@/entities/list';
 import { getCategories } from '@/entities/category';
 import { ListScreenPage } from '@/pages/list-screen';
-import { ApiError } from '@/shared/api';
+import { ApiError } from '@/shared/api/client';
 
 export function App() {
   const [list, setList] = useState<List | null>(null);

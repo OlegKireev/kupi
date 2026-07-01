@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "fsd-lint": "steiger ./src"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@kupi/shared": "workspace:*",
@@ -15,11 +14,9 @@
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@feature-sliced/steiger-plugin": "^0.6.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
-    "steiger": "^0.5.13",
     "typescript": "^6.0.3",
     "vite": "^8.1.1",
     "vite-plugin-pwa": "^1.3.0"
