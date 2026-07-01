@@ -4,12 +4,26 @@ import { CategoryIcon } from '@/entities/category';
 import { ItemRow, mergeItems, syncItems } from '@/entities/item';
 import { AddItemInput } from '@/features/add-item';
 import { ItemEditor } from '@/features/edit-item';
+import { ListMenu } from '@/features/list-menu';
+import { ListSwitcher } from '@/features/list-switcher';
 import { useToggleItem } from '@/features/toggle-item';
-import { List as ListComponent, Stack, Text, Title } from '@/shared/ui';
+import { Group, List as ListComponent, Stack, Text } from '@/shared/ui';
 
-type Props = { list: List; categories: Category[] };
+type Props = {
+  list: List;
+  lists: List[];
+  categories: Category[];
+  onSwitchList: (id: string) => void;
+  onListsChanged: (selectId?: string) => void;
+};
 
-export function ListScreen({ list, categories }: Props) {
+export function ListScreen({
+  list,
+  lists,
+  categories,
+  onSwitchList,
+  onListsChanged,
+}: Props) {
   const [items, setItems] = useState<Item[]>([]);
   const [lastSeenSeq, setLastSeenSeq] = useState(0);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
@@ -31,6 +45,8 @@ export function ListScreen({ list, categories }: Props) {
   };
 
   useEffect(() => {
+    setItems([]);
+    setLastSeenSeq(0);
     syncItems(list.id, { lastSeenSeq: 0, changes: [] }).then(onSynced);
   }, [list.id]);
 
@@ -38,12 +54,21 @@ export function ListScreen({ list, categories }: Props) {
 
   return (
     <Stack p={12}>
-      <Title
-        order={1}
-        size="h1"
+      <Group
+        justify="space-between"
+        wrap="nowrap"
       >
-        {list.name}
-      </Title>
+        <ListSwitcher
+          list={list}
+          lists={lists}
+          onSwitchList={onSwitchList}
+          onListsChanged={onListsChanged}
+        />
+        <ListMenu
+          list={list}
+          onListsChanged={onListsChanged}
+        />
+      </Group>
       <AddItemInput
         listId={list.id}
         lastSeenSeq={lastSeenSeq}
