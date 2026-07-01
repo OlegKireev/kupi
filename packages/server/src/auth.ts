@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import cookie from "@fastify/cookie";
 
 export const COOKIE = "kupi_dt";
