@@ -1,5 +1,5 @@
 import type { Category, Item, SyncResponse } from '@kupi/shared';
-import { CategoryIcon } from '@/entities/category';
+import { ActionIcon, Button, Chip, Group, Stack, Text } from '@/shared/ui';
 import { useEditItem } from '../model/useEditItem';
 
 type Props = {
@@ -24,48 +24,64 @@ export function ItemEditor({
     lastSeenSeq,
     onSynced,
   });
-  const category = categories.find((c) => c.id === item.categoryId);
 
   return (
-    <li className="item-row item-row--expanded">
-      <div className="item-editor__header" onClick={onClose}>
-        <span className="item-row__name">{item.name}</span>
-        <CategoryIcon category={category} />
-      </div>
-      <div className="item-editor__quantity">
-        <button
-          type="button"
-          onClick={() => void setQuantity(item, Math.max(1, item.quantity - 1))}
+    <Stack component="li">
+      <Group p={'0 16px 16px'}>
+        <Group
+          gap="xs"
+          wrap="nowrap"
         >
-          −
-        </button>
-        <span>{item.quantity}</span>
-        <button type="button" onClick={() => void setQuantity(item, item.quantity + 1)}>
-          +
-        </button>
-      </div>
-      <div className="item-editor__categories">
-        {categories.map((c) => (
-          <button
-            type="button"
-            key={c.id}
-            className={`category-chip${c.id === item.categoryId ? ' category-chip--active' : ''}`}
-            onClick={() => void setCategory(item, c.id)}
+          <ActionIcon
+            variant="default"
+            aria-label="Уменьшить количество"
+            onClick={() =>
+              void setQuantity(item, Math.max(1, item.quantity - 1))
+            }
           >
-            {c.icon} {c.name}
-          </button>
-        ))}
-      </div>
-      <button
-        type="button"
-        className="item-editor__delete"
-        onClick={() => {
-          void deleteItem(item);
-          onClose();
-        }}
-      >
-        Удалить товар
-      </button>
-    </li>
+            −
+          </ActionIcon>
+          <Text>{item.quantity}</Text>
+          <ActionIcon
+            variant="default"
+            aria-label="Увеличить количество"
+            onClick={() => void setQuantity(item, item.quantity + 1)}
+          >
+            +
+          </ActionIcon>
+        </Group>
+        <Button
+          variant="subtle"
+          color="red"
+          ml="auto"
+          size="compact-sm"
+          onClick={() => {
+            void deleteItem(item);
+            onClose();
+          }}
+        >
+          Удалить
+        </Button>
+        <Chip.Group
+          multiple={false}
+          value={item.categoryId}
+          onChange={(value) => void setCategory(item, value as string)}
+        >
+          <Group
+            className="item-editor__categories"
+            gap="xs"
+          >
+            {categories.map((c) => (
+              <Chip
+                key={c.id}
+                value={c.id}
+              >
+                {c.icon} {c.name}
+              </Chip>
+            ))}
+          </Group>
+        </Chip.Group>
+      </Group>
+    </Stack>
   );
 }

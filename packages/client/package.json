@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@kupi/shared": "workspace:*",
+    "@mantine/core": "^9.4.1",
+    "@mantine/hooks": "^9.4.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },

@@ -5,6 +5,7 @@ import { ItemRow, mergeItems, syncItems } from '@/entities/item';
 import { AddItemInput } from '@/features/add-item';
 import { ItemEditor } from '@/features/edit-item';
 import { useToggleItem } from '@/features/toggle-item';
+import { List as ListComponent, Stack, Text, Title } from '@/shared/ui';
 
 type Props = { list: List; categories: Category[] };
 
@@ -36,40 +37,54 @@ export function ListScreen({ list, categories }: Props) {
   const toggle = useToggleItem({ listId: list.id, lastSeenSeq, onSynced });
 
   return (
-    <div>
-      <h1 className="list-screen__title">{list.name}</h1>
-      <AddItemInput listId={list.id} lastSeenSeq={lastSeenSeq} onSynced={onSyncedPinned} />
+    <Stack p={12}>
+      <Title
+        order={1}
+        size="h1"
+      >
+        {list.name}
+      </Title>
+      <AddItemInput
+        listId={list.id}
+        lastSeenSeq={lastSeenSeq}
+        onSynced={onSyncedPinned}
+      />
       {items.length === 0 && (
-        <p className="add-item__hint">
+        <Text c="dimmed">
           Список пуст. Начни печатать выше — появятся подсказки из твоих частых
           покупок.
-        </p>
+        </Text>
       )}
-      <ul>
-        {items.map((item) =>
-          item.id === expandedItemId ? (
-            <ItemEditor
-              key={item.id}
-              item={item}
-              categories={categories}
-              listId={list.id}
-              lastSeenSeq={lastSeenSeq}
-              onSynced={onSynced}
-              onClose={() => setExpandedItemId(null)}
-            />
-          ) : (
-            <ItemRow
-              key={item.id}
-              item={item}
-              categoryIcon={
-                <CategoryIcon category={categories.find((c) => c.id === item.categoryId)} />
-              }
-              onToggle={() => toggle(item)}
-              onOpen={() => setExpandedItemId(item.id)}
-            />
-          ),
-        )}
-      </ul>
-    </div>
+      <ListComponent pl={0}>
+        {items.map((item) => (
+          <ItemRow
+            key={item.id}
+            item={item}
+            categoryIcon={
+              <CategoryIcon
+                category={categories.find((c) => c.id === item.categoryId)}
+              />
+            }
+            editor={
+              item.id === expandedItemId ? (
+                <ItemEditor
+                  key={item.id}
+                  item={item}
+                  categories={categories}
+                  listId={list.id}
+                  lastSeenSeq={lastSeenSeq}
+                  onSynced={onSynced}
+                  onClose={() => setExpandedItemId(null)}
+                />
+              ) : null
+            }
+            onToggle={() => toggle(item)}
+            onOpen={() =>
+              setExpandedItemId(item.id === expandedItemId ? null : item.id)
+            }
+          />
+        ))}
+      </ListComponent>
+    </Stack>
   );
 }

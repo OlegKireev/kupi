@@ -1,0 +1,7 @@
+.row {
+  border-radius: 10px;
+}
+
+.row:nth-child(even) {
+  background: var(--color-row-alt);
+}

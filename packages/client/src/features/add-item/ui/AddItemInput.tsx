@@ -1,4 +1,5 @@
 import type { SyncResponse } from '@kupi/shared';
+import { Autocomplete } from '@/shared/ui';
 import { useAddItem } from '../model/useAddItem';
 
 type Props = {
@@ -15,29 +16,18 @@ export function AddItemInput({ listId, lastSeenSeq, onSynced }: Props) {
   });
 
   return (
-    <div className="add-item">
-      <input
-        className="add-item__input"
-        value={text}
-        placeholder="Добавить товар"
-        onChange={(e) => void onTextChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') void submit();
-        }}
-      />
-      {suggestions.length > 0 && (
-        <ul className="add-item__suggestions">
-          {suggestions.map((s) => (
-            <li
-              key={s.name}
-              className="add-item__suggestion"
-              onClick={() => void onTextChange(s.name)}
-            >
-              {s.name} ({s.count})
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <Autocomplete
+      value={text}
+      placeholder="Добавить товар"
+      data={suggestions.map((s) => ({
+        value: s.name,
+        label: `${s.name} (${s.count})`,
+      }))}
+      onChange={(value) => void onTextChange(value)}
+      onOptionSubmit={(value) => void onTextChange(value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') void submit();
+      }}
+    />
   );
 }
