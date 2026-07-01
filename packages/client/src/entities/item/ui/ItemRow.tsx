@@ -41,6 +41,7 @@ export function ItemRow({
         />
         <InputLabel
           td={item.checked ? 'line-through' : 'initial'}
+          c={item.checked ? 'dimmed' : 'black'}
           htmlFor={id}
           size="md"
         >
