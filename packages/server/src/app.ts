@@ -1,15 +1,16 @@
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, { type FastifyInstance } from 'fastify';
 import {
   serializerCompiler,
   validatorCompiler,
-} from "fastify-type-provider-zod";
-import type { Db } from "@/db";
-import { initSchema } from "@/schema";
-import { registerAuth } from "@/auth";
-import { accountRoutes } from "@/routes/accounts";
-import { linkRoutes } from "@/routes/link";
-import { listRoutes } from "@/routes/lists";
-import { syncRoutes } from "@/routes/sync";
+} from 'fastify-type-provider-zod';
+
+import { registerAuth } from '@/auth';
+import type { Db } from '@/db';
+import { accountRoutes } from '@/routes/accounts';
+import { linkRoutes } from '@/routes/link';
+import { listRoutes } from '@/routes/lists';
+import { syncRoutes } from '@/routes/sync';
+import { initSchema } from '@/schema';
 
 export function buildApp(db: Db): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -18,7 +19,7 @@ export function buildApp(db: Db): FastifyInstance {
   initSchema(db);
 
   // db прокидывается уже сейчас, чтобы роуты фич из плана бэка могли им пользоваться
-  app.decorate("db", db);
+  app.decorate('db', db);
 
   // Устанавливаем zod-компиляторы для валидации и сериализации
   app.setValidatorCompiler(validatorCompiler);
@@ -39,14 +40,14 @@ export function buildApp(db: Db): FastifyInstance {
   // Регистрируем роуты для синхронизации и подсказок
   syncRoutes(app);
 
-  app.get("/health", async () => {
-    return { status: "ok" };
+  app.get('/health', async () => {
+    return { status: 'ok' };
   });
 
   return app;
 }
 
-declare module "fastify" {
+declare module 'fastify' {
   interface FastifyInstance {
     db: Db;
   }

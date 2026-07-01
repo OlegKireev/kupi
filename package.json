@@ -3,16 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=22"
-  },
   "scripts": {
     "dev:server": "pnpm --filter @kupi/server dev",
     "dev:client": "pnpm --filter @kupi/client dev",
     "build": "pnpm --filter @kupi/client build",
     "test": "pnpm --filter @kupi/server test",
     "lint": "oxlint .",
-    "fmt": "oxfmt .",
+    "format": "oxfmt .",
     "typecheck": "pnpm -r exec tsc --noEmit"
   },
   "devDependencies": {
@@ -20,6 +17,9 @@
     "oxlint": "^1.72.0",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

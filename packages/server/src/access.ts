@@ -1,4 +1,4 @@
-import type { Db } from "@/db";
+import type { Db } from '@/db';
 
 /**
  * Проверяет, является ли пользователь членом списка.
@@ -6,7 +6,7 @@ import type { Db } from "@/db";
  */
 export function isMember(db: Db, listId: string, accountId: string): boolean {
   return !!db
-    .prepare("SELECT 1 FROM list_members WHERE list_id = ? AND account_id = ?")
+    .prepare('SELECT 1 FROM list_members WHERE list_id = ? AND account_id = ?')
     .get(listId, accountId);
 }
 
@@ -16,6 +16,8 @@ export function isMember(db: Db, listId: string, accountId: string): boolean {
  */
 export function isOwner(db: Db, listId: string, accountId: string): boolean {
   return !!db
-    .prepare("SELECT 1 FROM list_members WHERE list_id = ? AND account_id = ? AND role = 'owner'")
+    .prepare(
+      "SELECT 1 FROM list_members WHERE list_id = ? AND account_id = ? AND role = 'owner'",
+    )
     .get(listId, accountId);
 }

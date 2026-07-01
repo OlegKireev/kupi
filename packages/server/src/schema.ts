@@ -1,4 +1,4 @@
-import type { Db } from "@/db";
+import type { Db } from '@/db';
 
 // DDL для всех таблиц: идемпотентная инициализация схемы БД
 const DDL = `
@@ -67,15 +67,15 @@ CREATE TABLE IF NOT EXISTS item_frequency (
 
 // Пресетный общий набор категорий для MVP. Кастомные категории добавятся позднее.
 const CATEGORIES: Array<[string, string, string, string]> = [
-  ["veg", "Овощи и фрукты", "#4CAF50", "🥦"],
-  ["dairy", "Молочное", "#FFE082", "🥛"],
-  ["meat", "Мясо и рыба", "#E57373", "🍖"],
-  ["grocery", "Бакалея", "#D7CCC8", "🌾"],
-  ["drinks", "Напитки", "#64B5F6", "🥤"],
-  ["bread", "Хлеб", "#FFB74D", "🍞"],
-  ["frozen", "Заморозка", "#B3E5FC", "🧊"],
-  ["household", "Бытовое", "#B0BEC5", "🧽"],
-  ["other", "Другое", "#E0E0E0", "📦"],
+  ['veg', 'Овощи и фрукты', '#4CAF50', '🥦'],
+  ['dairy', 'Молочное', '#FFE082', '🥛'],
+  ['meat', 'Мясо и рыба', '#E57373', '🍖'],
+  ['grocery', 'Бакалея', '#D7CCC8', '🌾'],
+  ['drinks', 'Напитки', '#64B5F6', '🥤'],
+  ['bread', 'Хлеб', '#FFB74D', '🍞'],
+  ['frozen', 'Заморозка', '#B3E5FC', '🧊'],
+  ['household', 'Бытовое', '#B0BEC5', '🧽'],
+  ['other', 'Другое', '#E0E0E0', '📦'],
 ];
 
 /**
@@ -83,14 +83,14 @@ const CATEGORIES: Array<[string, string, string, string]> = [
  * Можно вызывать несколько раз без ошибок (INSERT OR IGNORE).
  */
 export function initSchema(db: Db): void {
-  db.pragma("foreign_keys = ON");
+  db.pragma('foreign_keys = ON');
   db.exec(DDL);
 
   // Засеиваем пресетные категории со стабильными id
   const insert = db.prepare(
-    "INSERT OR IGNORE INTO categories (id, name, color, icon, sort) VALUES (?, ?, ?, ?, ?)",
+    'INSERT OR IGNORE INTO categories (id, name, color, icon, sort) VALUES (?, ?, ?, ?, ?)',
   );
   CATEGORIES.forEach((c, i) => insert.run(c[0], c[1], c[2], c[3], i));
 
-  db.pragma("user_version = 1");
+  db.pragma('user_version = 1');
 }

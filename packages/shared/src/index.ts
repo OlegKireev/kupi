@@ -1,4 +1,4 @@
-import { z } from "zod/v4";
+import { z } from 'zod/v4';
 
 export const AccountSchema = z.object({
   id: z.string(),
@@ -21,7 +21,7 @@ export const CategorySchema = z.object({
 });
 export type Category = z.infer<typeof CategorySchema>;
 
-export const ListRoleSchema = z.enum(["owner", "member"]);
+export const ListRoleSchema = z.enum(['owner', 'member']);
 export type ListRole = z.infer<typeof ListRoleSchema>;
 
 export const ListSchema = z.object({
@@ -49,7 +49,7 @@ export type Item = z.infer<typeof ItemSchema>;
 export const ItemChangeSchema = z.object({
   itemId: z.string(),
   clientOpId: z.string(),
-  op: z.enum(["upsert", "delete"]),
+  op: z.enum(['upsert', 'delete']),
   fields: z
     .object({
       name: z.string().optional(),

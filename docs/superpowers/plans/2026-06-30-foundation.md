@@ -17,6 +17,7 @@
 ### Task 0: Initialize git and ignore files
 
 **Files:**
+
 - Create: `.gitignore`
 - Create: `.npmrc`
 
@@ -63,6 +64,7 @@ git commit -m "chore: init git repo with ignore files"
 ### Task 1: Root workspace config and shared tooling
 
 **Files:**
+
 - Create: `pnpm-workspace.yaml`
 - Create: `package.json`
 - Create: `tsconfig.base.json`
@@ -72,7 +74,7 @@ git commit -m "chore: init git repo with ignore files"
 
 ```yaml
 packages:
-  - "packages/*"
+  - 'packages/*'
 ```
 
 - [ ] **Step 2: Write root `package.json`**
@@ -168,6 +170,7 @@ git commit -m "chore: set up pnpm workspace and shared tooling"
 ### Task 2: `shared` package with core domain types
 
 **Files:**
+
 - Create: `packages/shared/package.json`
 - Create: `packages/shared/tsconfig.json`
 - Create: `packages/shared/src/index.ts`
@@ -224,7 +227,7 @@ export interface Category {
   icon: string;
 }
 
-export type ListRole = "owner" | "member";
+export type ListRole = 'owner' | 'member';
 
 export interface List {
   id: string;
@@ -267,6 +270,7 @@ git commit -m "feat(shared): add core domain types"
 ### Task 3: `server` package — Fastify skeleton with `/health` and SQLite
 
 **Files:**
+
 - Create: `packages/server/package.json`
 - Create: `packages/server/tsconfig.json`
 - Create: `packages/server/src/db.ts`
@@ -299,9 +303,11 @@ pnpm --filter @kupi/server add -D @types/better-sqlite3 @types/node
 Expected: `fastify`, `better-sqlite3`, `@kupi/shared` (as `workspace:*`) in dependencies; types in devDependencies.
 
 > **[execution fix]** pnpm 10 blocks native build scripts by default, so `better-sqlite3` won't compile and the server crashes at runtime. Add to the root `package.json`:
+>
 > ```json
 > "pnpm": { "onlyBuiltDependencies": ["better-sqlite3", "esbuild"] }
 > ```
+>
 > (`esbuild` is listed too — it's pulled in by Vite in Task 4.)
 
 - [ ] **Step 3: Write `packages/server/tsconfig.json`**
@@ -325,12 +331,12 @@ Expected: `fastify`, `better-sqlite3`, `@kupi/shared` (as `workspace:*`) in depe
 Single SQLite file. Schema is added in the backend plan; this just opens the connection.
 
 ```typescript
-import Database from "better-sqlite3";
+import Database from 'better-sqlite3';
 
-export function openDb(path = "kupi.db") {
+export function openDb(path = 'kupi.db') {
   const db = new Database(path);
-  db.pragma("journal_mode = WAL");
-  db.pragma("foreign_keys = ON");
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
   return db;
 }
 
@@ -342,19 +348,19 @@ export type Db = ReturnType<typeof openDb>;
 `buildApp` accepts an in-memory db so tests never touch disk.
 
 ```typescript
-import { test } from "node:test";
-import assert from "node:assert/strict";
-import Database from "better-sqlite3";
-import { buildApp } from "../src/app.ts";
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import Database from 'better-sqlite3';
+import { buildApp } from '../src/app.ts';
 
-test("GET /health returns ok", async () => {
-  const db = new Database(":memory:");
+test('GET /health returns ok', async () => {
+  const db = new Database(':memory:');
   const app = buildApp(db);
 
-  const res = await app.inject({ method: "GET", url: "/health" });
+  const res = await app.inject({ method: 'GET', url: '/health' });
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.json(), { status: "ok" });
+  assert.deepEqual(res.json(), { status: 'ok' });
 
   await app.close();
 });
@@ -371,23 +377,23 @@ Expected: FAIL — cannot resolve `../src/app.ts` (module does not exist yet).
 - [ ] **Step 7: Write `packages/server/src/app.ts`**
 
 ```typescript
-import Fastify, { type FastifyInstance } from "fastify";
-import type { Db } from "./db.ts";
+import Fastify, { type FastifyInstance } from 'fastify';
+import type { Db } from './db.ts';
 
 export function buildApp(db: Db): FastifyInstance {
   const app = Fastify({ logger: false });
 
   // db is wired in now so feature routes in the backend plan can use it.
-  app.decorate("db", db);
+  app.decorate('db', db);
 
-  app.get("/health", async () => {
-    return { status: "ok" };
+  app.get('/health', async () => {
+    return { status: 'ok' };
   });
 
   return app;
 }
 
-declare module "fastify" {
+declare module 'fastify' {
   interface FastifyInstance {
     db: Db;
   }
@@ -407,8 +413,8 @@ Expected: PASS — 1 test, 0 failures.
 Entry point that opens the real db file and listens.
 
 ```typescript
-import { openDb } from "./db.ts";
-import { buildApp } from "./app.ts";
+import { openDb } from './db.ts';
+import { buildApp } from './app.ts';
 
 const db = openDb();
 const app = buildApp(db);
@@ -416,7 +422,7 @@ const app = buildApp(db);
 const port = Number(process.env.PORT ?? 3000);
 
 app
-  .listen({ port, host: "0.0.0.0" })
+  .listen({ port, host: '0.0.0.0' })
   .then((addr) => app.log.info(`server listening on ${addr}`))
   .catch((err) => {
     console.error(err);
@@ -444,6 +450,7 @@ git commit -m "feat(server): fastify skeleton with health endpoint and sqlite"
 ### Task 4: `client` package — Vite + React + PWA skeleton
 
 **Files:**
+
 - Create: `packages/client/package.json`
 - Create: `packages/client/tsconfig.json`
 - Create: `packages/client/vite.config.ts`
@@ -494,22 +501,22 @@ Expected: runtime deps `react`, `react-dom`, `@kupi/shared`; dev deps for Vite/R
 - [ ] **Step 4: Write `packages/client/vite.config.ts`**
 
 ```typescript
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import { VitePWA } from "vite-plugin-pwa";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: 'autoUpdate',
       manifest: {
-        name: "kupi",
-        short_name: "kupi",
-        start_url: "/",
-        display: "standalone",
-        background_color: "#ffffff",
-        theme_color: "#ffffff",
+        name: 'kupi',
+        short_name: 'kupi',
+        start_url: '/',
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#ffffff',
       },
     }),
   ],
@@ -523,12 +530,18 @@ export default defineConfig({
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
     <title>kupi</title>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script
+      type="module"
+      src="/src/main.tsx"
+    ></script>
   </body>
 </html>
 ```
@@ -538,13 +551,13 @@ export default defineConfig({
 Imports a type from `@kupi/shared` to prove the workspace link resolves through the bundler.
 
 ```tsx
-import type { List } from "@kupi/shared";
+import type { List } from '@kupi/shared';
 
 export function App() {
   const demo: List = {
-    id: "demo",
-    name: "Список покупок",
-    ownerAccountId: "me",
+    id: 'demo',
+    name: 'Список покупок',
+    ownerAccountId: 'me',
     seq: 0,
     createdAt: Date.now(),
   };
@@ -556,11 +569,11 @@ export function App() {
 - [ ] **Step 7: Write `packages/client/src/main.tsx`**
 
 ```tsx
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { App } from "./App.tsx";
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { App } from './App.tsx';
 
-createRoot(document.getElementById("root")!).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
   </StrictMode>,

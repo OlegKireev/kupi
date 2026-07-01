@@ -1,15 +1,17 @@
-import Database from "better-sqlite3";
-import type { FastifyInstance } from "fastify";
-import { buildApp } from "@/app";
-import { COOKIE } from "@/auth";
-import type { Bootstrap } from "@kupi/shared";
+import Database from 'better-sqlite3';
+import type { FastifyInstance } from 'fastify';
+
+import type { Bootstrap } from '@kupi/shared';
+
+import { buildApp } from '@/app';
+import { COOKIE } from '@/auth';
 
 /**
  * Создаёт новый Fastify app с in-memory БД.
  * Удобно для тестов — каждый тест получает изолированное состояние.
  */
 export function makeApp(): FastifyInstance {
-  return buildApp(new Database(":memory:"));
+  return buildApp(new Database(':memory:'));
 }
 
 /**
@@ -20,7 +22,7 @@ export function makeApp(): FastifyInstance {
 export async function signup(
   app: FastifyInstance,
 ): Promise<{ cookie: string; bootstrap: Bootstrap }> {
-  const res = await app.inject({ method: "POST", url: "/accounts" });
+  const res = await app.inject({ method: 'POST', url: '/accounts' });
   const c = res.cookies.find((x) => x.name === COOKIE)!;
   return { cookie: `${COOKIE}=${c.value}`, bootstrap: res.json() as Bootstrap };
 }

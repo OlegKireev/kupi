@@ -1,4 +1,4 @@
-import type { Account, Category, Item, List } from "@kupi/shared";
+import type { Account, Category, Item, List } from '@kupi/shared';
 
 /**
  * Маппит SQLite строку в доменный тип Account.

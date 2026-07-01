@@ -1,6 +1,7 @@
-import type { Bootstrap } from "@kupi/shared";
-import type { Db } from "@/db";
-import { rowToAccount, rowToCategory, rowToList } from "@/map";
+import type { Bootstrap } from '@kupi/shared';
+
+import type { Db } from '@/db';
+import { rowToAccount, rowToCategory, rowToList } from '@/map';
 
 /**
  * Собирает payload для свежеаутентифицированного устройства:
@@ -10,7 +11,7 @@ import { rowToAccount, rowToCategory, rowToList } from "@/map";
 export function buildBootstrap(db: Db, accountId: string): Bootstrap {
   // Резолвим аккаунт
   const account = rowToAccount(
-    db.prepare("SELECT * FROM accounts WHERE id = ?").get(accountId) as any,
+    db.prepare('SELECT * FROM accounts WHERE id = ?').get(accountId) as any,
   );
 
   // Резолвим все списки, где аккаунт — member или owner
@@ -26,9 +27,9 @@ export function buildBootstrap(db: Db, accountId: string): Bootstrap {
   ).map(rowToList);
 
   // Загружаем пресетные категории
-  const categories = (db.prepare("SELECT * FROM categories ORDER BY sort").all() as any[]).map(
-    rowToCategory,
-  );
+  const categories = (
+    db.prepare('SELECT * FROM categories ORDER BY sort').all() as any[]
+  ).map(rowToCategory);
 
   return { account, lists, categories };
 }

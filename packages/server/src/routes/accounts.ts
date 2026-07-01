@@ -1,9 +1,11 @@
-import type { FastifyInstance } from "fastify";
-import type { Bootstrap, Category } from "@kupi/shared";
-import { newId, newToken } from "@/ids";
-import { setAuthCookie } from "@/auth";
-import { buildBootstrap } from "@/bootstrap";
-import { rowToCategory } from "@/map";
+import type { FastifyInstance } from 'fastify';
+
+import type { Bootstrap, Category } from '@kupi/shared';
+
+import { setAuthCookie } from '@/auth';
+import { buildBootstrap } from '@/bootstrap';
+import { newId, newToken } from '@/ids';
+import { rowToCategory } from '@/map';
 
 /**
  * POST /accounts: Создаёт новый анонимный аккаунт
@@ -18,7 +20,7 @@ import { rowToCategory } from "@/map";
  */
 export function accountRoutes(app: FastifyInstance): void {
   // POST /accounts: анонимная регистрация
-  app.post("/accounts", async (_req, reply): Promise<Bootstrap> => {
+  app.post('/accounts', async (_req, reply): Promise<Bootstrap> => {
     const now = Date.now();
     const accountId = newId();
     const token = newToken();
@@ -28,23 +30,29 @@ export function accountRoutes(app: FastifyInstance): void {
     // Вся логика в одной транзакции
     app.db.transaction(() => {
       // Создаём аккаунт
-      app.db.prepare("INSERT INTO accounts (id, created_at) VALUES (?, ?)").run(accountId, now);
+      app.db
+        .prepare('INSERT INTO accounts (id, created_at) VALUES (?, ?)')
+        .run(accountId, now);
 
       // Создаём первое устройство с токеном
       app.db
-        .prepare("INSERT INTO devices (id, account_id, token, created_at) VALUES (?, ?, ?, ?)")
+        .prepare(
+          'INSERT INTO devices (id, account_id, token, created_at) VALUES (?, ?, ?, ?)',
+        )
         .run(deviceId, accountId, token, now);
 
       // Создаём дефолтный список "Мои покупки"
       app.db
         .prepare(
-          "INSERT INTO lists (id, name, owner_account_id, seq, created_at) VALUES (?, ?, ?, 0, ?)",
+          'INSERT INTO lists (id, name, owner_account_id, seq, created_at) VALUES (?, ?, ?, 0, ?)',
         )
-        .run(listId, "Мои покупки", accountId, now);
+        .run(listId, 'Мои покупки', accountId, now);
 
       // Добавляем аккаунт как owner в дефолтный список
       app.db
-        .prepare("INSERT INTO list_members (list_id, account_id, role) VALUES (?, ?, 'owner')")
+        .prepare(
+          "INSERT INTO list_members (list_id, account_id, role) VALUES (?, ?, 'owner')",
+        )
         .run(listId, accountId);
     })();
 
@@ -57,9 +65,9 @@ export function accountRoutes(app: FastifyInstance): void {
   });
 
   // GET /categories: публичный пресет (требует аутентификацию, см. registerAuth)
-  app.get("/categories", async (): Promise<Category[]> => {
-    return (app.db.prepare("SELECT * FROM categories ORDER BY sort").all() as any[]).map(
-      rowToCategory,
-    );
+  app.get('/categories', async (): Promise<Category[]> => {
+    return (
+      app.db.prepare('SELECT * FROM categories ORDER BY sort').all() as any[]
+    ).map(rowToCategory);
   });
 }

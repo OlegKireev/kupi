@@ -1,11 +1,16 @@
-import type { ItemChange } from "@kupi/shared";
-import type { Db } from "@/db";
-import { normalizeName } from "@/ids";
+import type { ItemChange } from '@kupi/shared';
+
+import type { Db } from '@/db';
+import { normalizeName } from '@/ids';
 
 /** Инкрементирует счётчик списка и возвращает новый seq. */
 function bumpSeq(db: Db, listId: string): number {
-  db.prepare("UPDATE lists SET seq = seq + 1 WHERE id = ?").run(listId);
-  return (db.prepare("SELECT seq FROM lists WHERE id = ?").get(listId) as { seq: number }).seq;
+  db.prepare('UPDATE lists SET seq = seq + 1 WHERE id = ?').run(listId);
+  return (
+    db.prepare('SELECT seq FROM lists WHERE id = ?').get(listId) as {
+      seq: number;
+    }
+  ).seq;
 }
 
 /** Инкрементирует частоту использования имени для подсказок. */
@@ -32,19 +37,24 @@ function incFreq(db: Db, accountId: string, name: string): void {
  * // потому что COALESCE не отличает "отсутствует" от "явный null" — очистка
  * // категории не MVP-фича. Добавить sentinel-значение если понадобится.
  */
-export function applyChange(db: Db, listId: string, accountId: string, ch: ItemChange): void {
+export function applyChange(
+  db: Db,
+  listId: string,
+  accountId: string,
+  ch: ItemChange,
+): void {
   // Идемпотентность: повторная доставка одного clientOpId не применяется дважды
   const ins = db
-    .prepare("INSERT OR IGNORE INTO applied_ops (client_op_id) VALUES (?)")
+    .prepare('INSERT OR IGNORE INTO applied_ops (client_op_id) VALUES (?)')
     .run(ch.clientOpId);
   if (ins.changes === 0) return;
 
-  const cur = db.prepare("SELECT deleted FROM items WHERE id = ?").get(ch.itemId) as
-    | { deleted: number }
-    | undefined;
+  const cur = db
+    .prepare('SELECT deleted FROM items WHERE id = ?')
+    .get(ch.itemId) as { deleted: number } | undefined;
 
   // Remove-wins: tombstone не воскрешаем правкой
-  if (cur && cur.deleted && ch.op !== "delete") return;
+  if (cur && cur.deleted && ch.op !== 'delete') return;
 
   const seq = bumpSeq(db, listId);
   const now = Date.now();
@@ -58,25 +68,23 @@ export function applyChange(db: Db, listId: string, accountId: string, ch: ItemC
     ).run(
       ch.itemId,
       listId,
-      f.name ?? "",
+      f.name ?? '',
       f.quantity ?? 1,
       f.categoryId ?? null,
       f.checked ? 1 : 0,
       seq,
-      ch.op === "delete" ? 1 : 0,
+      ch.op === 'delete' ? 1 : 0,
       now,
     );
     // Frequency инкрементируется только при создании нового именованного item
-    if (ch.op !== "delete" && f.name) incFreq(db, accountId, f.name);
+    if (ch.op !== 'delete' && f.name) incFreq(db, accountId, f.name);
     return;
   }
 
-  if (ch.op === "delete") {
-    db.prepare("UPDATE items SET deleted = 1, version = ?, updated_at = ? WHERE id = ?").run(
-      seq,
-      now,
-      ch.itemId,
-    );
+  if (ch.op === 'delete') {
+    db.prepare(
+      'UPDATE items SET deleted = 1, version = ?, updated_at = ? WHERE id = ?',
+    ).run(seq, now, ch.itemId);
     return;
   }
 
