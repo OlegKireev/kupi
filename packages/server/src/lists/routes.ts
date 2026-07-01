@@ -5,6 +5,7 @@ import type { List } from '@kupi/shared';
 import { CodeBodySchema, ListParamsSchema, NameBodySchema } from '@kupi/shared';
 
 import {
+  countListMembers,
   deleteList,
   findListById,
   findListInviteByCode,
@@ -120,6 +121,18 @@ export function listRoutes(app: FastifyInstance): void {
         await removeListMember(app.db, req.params.id, req.accountId);
       }
       return reply.code(204).send();
+    },
+  );
+
+  // GET /lists/:id/members — число участников списка (без имён, только count)
+  typedApp.get(
+    '/lists/:id/members',
+    { schema: { params: ListParamsSchema } },
+    async (req, reply) => {
+      if (!(await isMember(app.db, req.params.id, req.accountId))) {
+        return reply.code(404).send({ error: 'not_found' });
+      }
+      return { count: await countListMembers(app.db, req.params.id) };
     },
   );
 }

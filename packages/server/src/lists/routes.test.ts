@@ -212,3 +212,55 @@ test('non-member cannot delete list (404)', async () => {
 
   await app.close();
 });
+
+test('GET /lists/:id/members returns member count, grows as accounts join', async () => {
+  const app = makeApp();
+  const owner = await signup(app);
+  const guest = await signup(app);
+  const listId = owner.bootstrap.lists[0]!.id;
+
+  const before = await app.inject({
+    method: 'GET',
+    url: `/lists/${listId}/members`,
+    headers: { cookie: owner.cookie },
+  });
+  assert.deepEqual(before.json(), { count: 1 });
+
+  const inviteRes = await app.inject({
+    method: 'POST',
+    url: `/lists/${listId}/invites`,
+    headers: { cookie: owner.cookie },
+  });
+  const { code } = inviteRes.json() as { code: string };
+  await app.inject({
+    method: 'POST',
+    url: '/lists/join',
+    headers: { cookie: guest.cookie },
+    payload: { code },
+  });
+
+  const after = await app.inject({
+    method: 'GET',
+    url: `/lists/${listId}/members`,
+    headers: { cookie: owner.cookie },
+  });
+  assert.deepEqual(after.json(), { count: 2 });
+
+  await app.close();
+});
+
+test('GET /lists/:id/members is 404 for non-members', async () => {
+  const app = makeApp();
+  const owner = await signup(app);
+  const outsider = await signup(app);
+  const listId = owner.bootstrap.lists[0]!.id;
+
+  const res = await app.inject({
+    method: 'GET',
+    url: `/lists/${listId}/members`,
+    headers: { cookie: outsider.cookie },
+  });
+  assert.equal(res.statusCode, 404);
+
+  await app.close();
+});
