@@ -130,3 +130,34 @@ export async function findListInviteByCode(
     .where('code', '=', code)
     .executeTakeFirst();
 }
+
+/** Удаляет список целиком (владелец): каскадом чистит items/list_invites/list_members/lists. */
+export async function deleteList(db: Db, listId: string): Promise<void> {
+  await db.deleteFrom('items').where('listId', '=', listId).execute();
+  await db.deleteFrom('listInvites').where('listId', '=', listId).execute();
+  await db.deleteFrom('listMembers').where('listId', '=', listId).execute();
+  await db.deleteFrom('lists').where('id', '=', listId).execute();
+}
+
+/** Удаляет членство одного аккаунта в списке (выход участника, не владельца). */
+export async function removeListMember(
+  db: Db,
+  listId: string,
+  accountId: string,
+): Promise<void> {
+  await db
+    .deleteFrom('listMembers')
+    .where('listId', '=', listId)
+    .where('accountId', '=', accountId)
+    .execute();
+}
+
+/** Считает число участников списка. */
+export async function countListMembers(db: Db, listId: string): Promise<number> {
+  const rows = await db
+    .selectFrom('listMembers')
+    .select('accountId')
+    .where('listId', '=', listId)
+    .execute();
+  return rows.length;
+}
