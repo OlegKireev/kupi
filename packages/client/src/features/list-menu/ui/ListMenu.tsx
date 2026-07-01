@@ -1,8 +1,20 @@
-import { Copy, DotsThreeVertical, Trash } from '@phosphor-icons/react';
-
 import type { List } from '@kupi/shared';
 
-import { ActionIcon, Button, Menu, Modal, Text, TextInput } from '@/shared/ui';
+import {
+  ActionIcon,
+  Button,
+  Menu,
+  Modal,
+  Text,
+  TextInput,
+  CopyIcon,
+  DotsThreeVerticalIcon,
+  TrashIcon,
+  UserPlusIcon,
+  UsersFourIcon,
+  DevicesIcon,
+  TextboxIcon,
+} from '@/shared/ui';
 import { useListMenu } from '../model/useListMenu';
 
 type Props = {
@@ -38,19 +50,37 @@ export function ListMenu({ list, onListsChanged }: Props) {
             variant="subtle"
             aria-label="Меню списка"
           >
-            <DotsThreeVertical size={20} />
+            <DotsThreeVerticalIcon size={20} />
           </ActionIcon>
         </Menu.Target>
         <Menu.Dropdown>
-          <Menu.Item onClick={() => void openInvite()}>Пригласить</Menu.Item>
-          <Menu.Item disabled>Участники ({memberCount ?? '…'})</Menu.Item>
-          <Menu.Item onClick={() => void openLinkDevice()}>
+          <Menu.Item
+            leftSection={<UserPlusIcon size={16} />}
+            onClick={openInvite}
+          >
+            Пригласить
+          </Menu.Item>
+          <Menu.Item
+            disabled
+            leftSection={<UsersFourIcon size={16} />}
+          >
+            Участники ({memberCount ?? '…'})
+          </Menu.Item>
+          <Menu.Item
+            leftSection={<DevicesIcon size={16} />}
+            onClick={openLinkDevice}
+          >
             Подключить устройство
           </Menu.Item>
-          <Menu.Item onClick={openRename}>Переименовать список</Menu.Item>
+          <Menu.Item
+            leftSection={<TextboxIcon size={16} />}
+            onClick={openRename}
+          >
+            Переименовать список
+          </Menu.Item>
           <Menu.Item
             color="red"
-            leftSection={<Trash size={16} />}
+            leftSection={<TrashIcon size={16} />}
             onClick={openConfirmDelete}
           >
             Удалить/покинуть список
@@ -73,10 +103,8 @@ export function ListMenu({ list, onListsChanged }: Props) {
         <Button
           mt="md"
           fullWidth
-          leftSection={<Copy size={16} />}
-          onClick={() =>
-            void navigator.clipboard.writeText(codeModal?.code ?? '')
-          }
+          leftSection={<CopyIcon size={16} />}
+          onClick={() => navigator.clipboard.writeText(codeModal?.code ?? '')}
         >
           Копировать
         </Button>
@@ -95,7 +123,7 @@ export function ListMenu({ list, onListsChanged }: Props) {
         <Button
           mt="md"
           fullWidth
-          onClick={() => void submitRename()}
+          onClick={submitRename}
         >
           Сохранить
         </Button>
@@ -114,7 +142,7 @@ export function ListMenu({ list, onListsChanged }: Props) {
           mt="md"
           fullWidth
           color="red"
-          onClick={() => void confirmDelete()}
+          onClick={confirmDelete}
         >
           Подтвердить
         </Button>

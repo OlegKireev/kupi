@@ -1,5 +1,13 @@
 import type { Category, Item, SyncResponse } from '@kupi/shared';
-import { ActionIcon, Button, Chip, Group, Stack, Text } from '@/shared/ui';
+import {
+  ActionIcon,
+  Button,
+  Chip,
+  Group,
+  Stack,
+  Text,
+  TrashIcon,
+} from '@/shared/ui';
 import { useEditItem } from '../model/useEditItem';
 
 type Props = {
@@ -35,9 +43,7 @@ export function ItemEditor({
           <ActionIcon
             variant="default"
             aria-label="Уменьшить количество"
-            onClick={() =>
-              void setQuantity(item, Math.max(1, item.quantity - 1))
-            }
+            onClick={() => setQuantity(item, Math.max(1, item.quantity - 1))}
           >
             −
           </ActionIcon>
@@ -45,7 +51,7 @@ export function ItemEditor({
           <ActionIcon
             variant="default"
             aria-label="Увеличить количество"
-            onClick={() => void setQuantity(item, item.quantity + 1)}
+            onClick={() => setQuantity(item, item.quantity + 1)}
           >
             +
           </ActionIcon>
@@ -54,9 +60,10 @@ export function ItemEditor({
           variant="subtle"
           color="red"
           ml="auto"
+          leftSection={<TrashIcon />}
           size="compact-sm"
           onClick={() => {
-            void deleteItem(item);
+            deleteItem(item);
             onClose();
           }}
         >
@@ -65,12 +72,9 @@ export function ItemEditor({
         <Chip.Group
           multiple={false}
           value={item.categoryId}
-          onChange={(value) => void setCategory(item, value as string)}
+          onChange={(value) => setCategory(item, value)}
         >
-          <Group
-            className="item-editor__categories"
-            gap="xs"
-          >
+          <Group gap="xs">
             {categories.map((c) => (
               <Chip
                 key={c.id}

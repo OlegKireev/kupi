@@ -15,3 +15,15 @@ export {
   Title,
   UnstyledButton,
 } from '@mantine/core';
+export {
+  CaretDownIcon,
+  CopyIcon,
+  DotsThreeVerticalIcon,
+  TrashIcon,
+  UserPlusIcon,
+  UsersFourIcon,
+  DevicesIcon,
+  TextboxIcon,
+  ListIcon,
+  FilePlusIcon,
+} from '@phosphor-icons/react';

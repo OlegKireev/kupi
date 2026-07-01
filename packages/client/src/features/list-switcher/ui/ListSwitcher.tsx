@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { CaretDown } from '@phosphor-icons/react';
 import type { List } from '@kupi/shared';
 import { createList } from '@/entities/list';
 import {
@@ -10,6 +9,8 @@ import {
   TextInput,
   Title,
   UnstyledButton,
+  CaretDownIcon,
+  FilePlusIcon,
 } from '@/shared/ui';
 
 type Props = {
@@ -19,7 +20,12 @@ type Props = {
   onListsChanged: (selectId?: string) => void;
 };
 
-export function ListSwitcher({ list, lists, onSwitchList, onListsChanged }: Props) {
+export function ListSwitcher({
+  list,
+  lists,
+  onSwitchList,
+  onListsChanged,
+}: Props) {
   const [newListOpen, setNewListOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
 
@@ -38,16 +44,16 @@ export function ListSwitcher({ list, lists, onSwitchList, onListsChanged }: Prop
         <Menu.Target>
           <UnstyledButton>
             <Group
-              gap={4}
+              gap={8}
               wrap="nowrap"
             >
               <Title
                 order={1}
-                size="h1"
+                size="h2"
               >
                 {list.name}
               </Title>
-              <CaretDown size={20} />
+              <CaretDownIcon size={20} />
             </Group>
           </UnstyledButton>
         </Menu.Target>
@@ -61,7 +67,9 @@ export function ListSwitcher({ list, lists, onSwitchList, onListsChanged }: Prop
             </Menu.Item>
           ))}
           <Menu.Divider />
-          <Menu.Item onClick={() => setNewListOpen(true)}>Новый список</Menu.Item>
+          <Menu.Item onClick={() => setNewListOpen(true)}>
+            Новый список
+          </Menu.Item>
         </Menu.Dropdown>
       </Menu>
 
@@ -79,7 +87,8 @@ export function ListSwitcher({ list, lists, onSwitchList, onListsChanged }: Prop
         <Button
           mt="md"
           fullWidth
-          onClick={() => void submitNewList()}
+          leftSection={<FilePlusIcon />}
+          onClick={submitNewList}
         >
           Создать
         </Button>

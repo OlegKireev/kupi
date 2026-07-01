@@ -1,6 +1,13 @@
 import type { ReactNode } from 'react';
 import type { Item } from '@kupi/shared';
-import { ActionIcon, Checkbox, Group, InputLabel, Stack } from '@/shared/ui';
+import {
+  ActionIcon,
+  Checkbox,
+  Group,
+  InputLabel,
+  ListIcon,
+  Stack,
+} from '@/shared/ui';
 import styles from './styles.module.css';
 
 type Props = {
@@ -45,7 +52,7 @@ export function ItemRow({
           variant="gradient"
           onClick={onOpen}
         >
-          =
+          <ListIcon />
         </ActionIcon>
       </Group>
       {editor}
