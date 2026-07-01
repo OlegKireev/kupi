@@ -9,24 +9,26 @@ type Props = {
 };
 
 export function AddItemInput({ listId, lastSeenSeq, onSynced }: Props) {
-  const { text, suggestions, onTextChange, submit } = useAddItem({
-    listId,
-    lastSeenSeq,
-    onSynced,
-  });
+  const { text, suggestions, onTextChange, submitOnEnter, selectSuggestion } =
+    useAddItem({
+      listId,
+      lastSeenSeq,
+      onSynced,
+    });
 
   return (
     <Autocomplete
       value={text}
       placeholder="Добавить товар"
-      data={suggestions.map((s) => ({
-        value: s.name,
-        label: `${s.name} (${s.count})`,
-      }))}
-      onChange={(value) => void onTextChange(value)}
-      onOptionSubmit={(value) => void onTextChange(value)}
+      data={suggestions.map((s) => ({ value: s.name, label: s.name }))}
+      renderOption={({ option }) => {
+        const count = suggestions.find((s) => s.name === option.value)?.count;
+        return `${option.value} (${count})`;
+      }}
+      onChange={onTextChange}
+      onOptionSubmit={selectSuggestion}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') void submit();
+        if (e.key === 'Enter') submitOnEnter();
       }}
     />
   );
