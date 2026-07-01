@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { Suggestion, SyncResponse } from '@kupi/shared';
 import { syncItems } from '@/entities/item';
 import { generateId } from '@/shared/lib/ids';
@@ -13,10 +13,15 @@ type Params = {
 export function useAddItem({ listId, lastSeenSeq, onSynced }: Params) {
   const [text, setText] = useState('');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const latestQueryRef = useRef('');
 
   const onTextChange = async (value: string): Promise<void> => {
     setText(value);
-    setSuggestions(value.trim() ? await getSuggestions(value) : []);
+    latestQueryRef.current = value;
+    const results = value.trim() ? await getSuggestions(value) : [];
+    if (latestQueryRef.current === value) {
+      setSuggestions(results);
+    }
   };
 
   const submit = async (): Promise<void> => {
