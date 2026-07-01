@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Category, Item, List, SyncResponse } from '@kupi/shared';
 import { CategoryIcon } from '@/entities/category';
 import { ItemRow, mergeItems, syncItems } from '@/entities/item';
@@ -27,6 +27,11 @@ export function ListScreen({
   const [items, setItems] = useState<Item[]>([]);
   const [lastSeenSeq, setLastSeenSeq] = useState(0);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+
+  const sortedItems = useMemo(
+    () => items.slice().sort((a, b) => Number(a.checked) - Number(b.checked)),
+    [items],
+  );
 
   const onSynced = (response: SyncResponse): void => {
     setItems((current) => mergeItems(current, response.items));
@@ -74,14 +79,14 @@ export function ListScreen({
         lastSeenSeq={lastSeenSeq}
         onSynced={onSyncedPinned}
       />
-      {items.length === 0 && (
+      {sortedItems.length === 0 && (
         <Text c="dimmed">
           Список пуст. Начни печатать выше — появятся подсказки из твоих частых
           покупок.
         </Text>
       )}
       <ListComponent pl={0}>
-        {items.map((item) => (
+        {sortedItems.map((item) => (
           <ItemRow
             key={item.id}
             item={item}
