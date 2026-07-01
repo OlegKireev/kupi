@@ -7,7 +7,11 @@ export {
   InputLabel,
   Group,
   List,
+  Menu,
+  Modal,
   Stack,
   Text,
+  TextInput,
   Title,
+  UnstyledButton,
 } from '@mantine/core';
