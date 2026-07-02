@@ -10,4 +10,3 @@ dist/
 .superpowers/
 .claude/worktrees/
 .playwright-mcp
-packages/e2e/test-results/
