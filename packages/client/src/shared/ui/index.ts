@@ -15,10 +15,12 @@ export {
   Title,
   UnstyledButton,
 } from '@mantine/core';
+export { notifications } from '@mantine/notifications';
 export {
   CaretDownIcon,
   CopyIcon,
   DotsThreeVerticalIcon,
+  KeyIcon,
   TrashIcon,
   UserPlusIcon,
   UsersFourIcon,
