@@ -20,6 +20,11 @@ pnpm workspace monorepo (Node >=22). Install with `pnpm install`.
   `lint:*` scripts; the root just fans out via `pnpm -r`, so one package can be
   checked with e.g. `pnpm --filter @kupi/client lint:types`
 - `pnpm format` — `oxfmt .`
+- `pnpm test:e2e` — Playwright e2e suite (`@kupi/e2e`), against real
+  server+client instances on dedicated ports 3100/5174 with a throwaway tmp
+  SQLite file — separate from `pnpm test` so the fast unit suite stays fast.
+  Requires a one-time `pnpm --filter @kupi/e2e exec playwright install
+  chromium` to fetch the browser binary.
 
 Run a single server test file directly (from `packages/server`), tests live next to the module they cover:
 `node --import tsx --test src/lists/routes.test.ts`
@@ -42,6 +47,10 @@ Three pnpm workspaces under `packages/`:
 - **`shared`** — zod schemas and inferred types shared between server and client (`Account`, `List`, `Item`, `ItemChange`, sync request/response, `Bootstrap`). This is the single source of truth for the wire format; both server routes and (eventually) client code import from `@kupi/shared`.
 - **`server`** — Fastify + `better-sqlite3` backend. All feature code.
 - **`client`** — React + Vite PWA. First vertical slice implemented: a single active shopping-list screen (add/check/edit/delete items) talking directly to the server's REST API, built as Feature-Sliced Design.
+- **`e2e`** — Playwright end-to-end suite (`@kupi/e2e`, private), driving
+  the real client against a real server. See `docs/superpowers/specs/2026-07-02-e2e-playwright-design.md`
+  for the full design (why dedicated ports, cookie-based test isolation, no
+  Page Object Model).
 
 Both `server` and `client` use a `@/*` → `./src/*` tsconfig path alias; `tsx` resolves it directly at runtime, no bundler step needed for the server.
 
