@@ -20,15 +20,18 @@ import { useListMenu } from '../model/useListMenu';
 type Props = {
   list: List;
   onListsChanged: (selectId?: string) => void;
+  pendingCount: number;
+  failedCount: number;
 };
 
-export function ListMenu({ list, onListsChanged }: Props) {
+export function ListMenu({ list, onListsChanged, pendingCount, failedCount }: Props) {
   const {
     memberCount,
     codeModal,
     renameOpen,
     renameValue,
     confirmDeleteOpen,
+    syncStatusText,
     loadMemberCount,
     openInvite,
     openLinkDevice,
@@ -40,7 +43,7 @@ export function ListMenu({ list, onListsChanged }: Props) {
     openConfirmDelete,
     closeConfirmDelete,
     confirmDelete,
-  } = useListMenu({ list, onListsChanged });
+  } = useListMenu({ list, onListsChanged, pendingCount, failedCount });
 
   return (
     <>
@@ -54,6 +57,7 @@ export function ListMenu({ list, onListsChanged }: Props) {
           </ActionIcon>
         </Menu.Target>
         <Menu.Dropdown>
+          <Menu.Label>{syncStatusText}</Menu.Label>
           <Menu.Item
             leftSection={<UserPlusIcon size={16} />}
             onClick={openInvite}

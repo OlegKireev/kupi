@@ -24,7 +24,7 @@ export function ListScreen({
   onSwitchList,
   onListsChanged,
 }: Props) {
-  const { items, applyChange } = useItemSync(list.id);
+  const { items, pendingCount, failedCount, applyChange } = useItemSync(list.id);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   const sortedItems = useMemo(
@@ -49,6 +49,8 @@ export function ListScreen({
         <ListMenu
           list={list}
           onListsChanged={onListsChanged}
+          pendingCount={pendingCount}
+          failedCount={failedCount}
         />
       </Group>
       <AddItemInput applyChange={applyChange} />

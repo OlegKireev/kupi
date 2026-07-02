@@ -1,28 +1,32 @@
 import { useState } from 'react';
-
 import type { List } from '@kupi/shared';
-
 import {
   createInvite,
   deleteList,
   getMemberCount,
   renameList,
 } from '@/entities/list';
+import { useOnlineStatus } from '@/shared/lib/useOnlineStatus';
 import { createLinkCode } from '../api/link-code-api';
+import { getSyncStatusText } from './sync-status';
 
 type Params = {
   list: List;
   onListsChanged: (selectId?: string) => void;
+  pendingCount: number;
+  failedCount: number;
 };
 
 type CodeModalState = { title: string; code: string } | null;
 
-export function useListMenu({ list, onListsChanged }: Params) {
+export function useListMenu({ list, onListsChanged, pendingCount, failedCount }: Params) {
   const [memberCount, setMemberCount] = useState<number | null>(null);
   const [codeModal, setCodeModal] = useState<CodeModalState>(null);
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState(list.name);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const online = useOnlineStatus();
+  const syncStatusText = getSyncStatusText(pendingCount, failedCount, online);
 
   const loadMemberCount = (): void => {
     void getMemberCount(list.id).then(setMemberCount);
@@ -70,6 +74,7 @@ export function useListMenu({ list, onListsChanged }: Params) {
     renameOpen,
     renameValue,
     confirmDeleteOpen,
+    syncStatusText,
     loadMemberCount,
     openInvite,
     openLinkDevice,
