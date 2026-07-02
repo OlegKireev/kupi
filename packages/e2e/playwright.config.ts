@@ -10,6 +10,11 @@ export default defineConfig({
   testDir: './tests',
   globalTeardown: './global-teardown.ts',
   fullyParallel: true,
+  // ponytail: one shared server + one shared SQLite file backs every test;
+  // full worker concurrency thrashes both under load (flaky timeouts on
+  // otherwise-deterministic assertions). Serialize until per-test isolation
+  // is worth the complexity.
+  workers: 1,
   reporter: 'list',
   use: {
     baseURL: 'http://localhost:5174',
