@@ -105,6 +105,12 @@ the tables it owns), plus a test file living next to the code it covers:
   - `categoryId: null` in a patch is currently indistinguishable from "field
     absent" (both mean "no change") — clearing a category isn't supported
     yet, marked with a `// ponytail:` comment in `merge.ts`.
+  - Category carries over on re-add: when inserting a brand-new item (new
+    `itemId`, e.g. add-item always mints one) with no explicit `categoryId`,
+    `merge.ts` looks up the most recent `categoryId` for a case-insensitive
+    name match in the same list (`sync/repository.ts`'s
+    `findLastCategoryIdForName`, matches tombstoned items too) — so deleting
+    an item and re-adding it by name doesn't lose its category.
   - Suggestions (`GET /api/suggestions`) are backed by `item_frequency`,
     incremented only when a _new_ named item is created (not on edits), keyed
     by `(account_id, normalized_name)`.

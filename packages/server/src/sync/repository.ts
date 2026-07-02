@@ -1,4 +1,4 @@
-import type { Insertable, Selectable, Updateable } from 'kysely';
+import { sql, type Insertable, type Selectable, type Updateable } from 'kysely';
 
 import type { Item, Suggestion } from '@kupi/shared';
 
@@ -37,6 +37,24 @@ export async function findItemById(
     .select('deleted')
     .where('id', '=', itemId)
     .executeTakeFirst();
+}
+
+/** Последняя известная категория для имени в списке (в т.ч. по удалённым items) — чтобы повторное добавление не сбрасывало категорию. */
+export async function findLastCategoryIdForName(
+  db: Db,
+  listId: string,
+  name: string,
+): Promise<string | null> {
+  const row = await db
+    .selectFrom('items')
+    .select('categoryId')
+    .where('listId', '=', listId)
+    .where(sql<boolean>`lower(name) = lower(${name})`)
+    .where('categoryId', 'is not', null)
+    .orderBy('version', 'desc')
+    .limit(1)
+    .executeTakeFirst();
+  return row?.categoryId ?? null;
 }
 
 /** Вставляет новый item. */

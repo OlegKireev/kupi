@@ -159,6 +159,56 @@ test('replaying the same clientOpId is idempotent', async () => {
   await app.close();
 });
 
+test('re-adding a deleted item by name restores its last category', async () => {
+  const app = makeApp();
+  const u = await signup(app);
+  const listId = u.bootstrap.lists[0]!.id;
+
+  await sync(app, u.cookie, listId, {
+    lastSeenSeq: 0,
+    changes: [
+      {
+        itemId: 'i1',
+        clientOpId: 'c0',
+        op: 'upsert',
+        fields: { name: 'Молоко' },
+      },
+    ],
+  });
+  await sync(app, u.cookie, listId, {
+    lastSeenSeq: 0,
+    changes: [
+      {
+        itemId: 'i1',
+        clientOpId: 'c1',
+        op: 'upsert',
+        fields: { categoryId: 'dairy' },
+      },
+    ],
+  });
+  await sync(app, u.cookie, listId, {
+    lastSeenSeq: 0,
+    changes: [{ itemId: 'i1', clientOpId: 'c2', op: 'delete', fields: {} }],
+  });
+
+  const res = await sync(app, u.cookie, listId, {
+    lastSeenSeq: 0,
+    changes: [
+      {
+        itemId: 'i2',
+        clientOpId: 'c3',
+        op: 'upsert',
+        fields: { name: 'Молоко', quantity: 1, categoryId: null },
+      },
+    ],
+  });
+
+  const item = (res.json() as SyncResponse).items.find((i) => i.id === 'i2')!;
+  assert.equal(item.categoryId, 'dairy');
+
+  await app.close();
+});
+
 test('non-member cannot sync (404)', async () => {
   const app = makeApp();
   const owner = await signup(app);

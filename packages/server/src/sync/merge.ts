@@ -7,6 +7,7 @@ import type { Items } from '@/db/types';
 import { incrementListSeq } from '@/lists/repository';
 import {
   findItemById,
+  findLastCategoryIdForName,
   incrementFrequency,
   insertAppliedOp,
   insertItem,
@@ -48,13 +49,21 @@ export async function applyChange(
   const fields = change.fields;
 
   if (!existingItem) {
-    // Новый item — вставляем с дефолтами для не присланных полей
+    // Новый item — вставляем с дефолтами для не присланных полей.
+    // Если категория не задана явно, подхватываем последнюю известную по
+    // имени в списке — так удаление и повторное добавление того же
+    // названия не сбрасывает категорию.
+    const categoryId =
+      fields.categoryId ??
+      (fields.name
+        ? await findLastCategoryIdForName(db, listId, fields.name)
+        : null);
     await insertItem(db, {
       id: change.itemId,
       listId,
       name: fields.name ?? '',
       quantity: fields.quantity ?? 1,
-      categoryId: fields.categoryId ?? null,
+      categoryId,
       checked: fields.checked ? 1 : 0,
       version: seq,
       deleted: change.op === 'delete' ? 1 : 0,
