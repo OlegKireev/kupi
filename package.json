@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "concurrently -n server,client -c blue,green \"pnpm:dev:server\" \"pnpm:dev:client\"",
     "dev:server": "pnpm --filter @kupi/server dev",
     "dev:client": "pnpm --filter @kupi/client dev",
     "build": "pnpm --filter @kupi/client build",
@@ -13,6 +14,7 @@
     "typecheck": "pnpm -r exec tsc --noEmit"
   },
   "devDependencies": {
+    "concurrently": "^9.2.3",
     "oxfmt": "^0.57.0",
     "oxlint": "^1.72.0",
     "tsx": "^4.22.4",

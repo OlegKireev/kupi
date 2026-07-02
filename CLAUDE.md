@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 pnpm workspace monorepo (Node >=22). Install with `pnpm install`.
 
+- `pnpm dev` — run both `dev:server` and `dev:client` together via `concurrently`
 - `pnpm dev:server` — run `@kupi/server` with `tsx watch` (port 3000, override via `PORT`)
 - `pnpm dev:client` — run `@kupi/client` via Vite (dev-proxies `/api` to the server on
   port 3000, so client and server share one origin in dev — no CORS needed)
