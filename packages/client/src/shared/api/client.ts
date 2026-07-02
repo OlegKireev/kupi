@@ -14,12 +14,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     credentials: 'include',
     ...init,
     headers: {
-      ...(init?.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      ...(init?.body !== undefined
+        ? { 'Content-Type': 'application/json' }
+        : {}),
       ...init?.headers,
     },
   });
   if (!res.ok) {
-    throw new ApiError(res.status, `${init?.method ?? 'GET'} ${path} -> ${res.status}`);
+    throw new ApiError(
+      res.status,
+      `${init?.method ?? 'GET'} ${path} -> ${res.status}`,
+    );
   }
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }

@@ -17,6 +17,9 @@ export function loadBootstrapCache(): BootstrapCache | null {
   }
 }
 
-export function saveBootstrapCache(lists: List[], categories: Category[]): void {
+export function saveBootstrapCache(
+  lists: List[],
+  categories: Category[],
+): void {
   localStorage.setItem(KEY, JSON.stringify({ lists, categories }));
 }

@@ -8,7 +8,9 @@ export function applyChangeLocally(
   const index = items.findIndex((item) => item.id === change.itemId);
 
   if (change.op === 'delete') {
-    return index === -1 ? items : items.filter((item) => item.id !== change.itemId);
+    return index === -1
+      ? items
+      : items.filter((item) => item.id !== change.itemId);
   }
 
   if (index === -1) {

@@ -1,5 +1,7 @@
 import { useState } from 'react';
+
 import type { Bootstrap, List } from '@kupi/shared';
+
 import { createList, joinList, redeemLinkCode } from '@/entities/list';
 import { ApiError } from '@/shared/api';
 import { notifications } from '@/shared/ui';

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+
 import type { ItemChange } from '@kupi/shared';
+
 import { ApiError } from '@/shared/api';
 import { syncItems } from '../api/item-api';
 import { applyChangeLocally } from './apply-change-locally';
@@ -46,7 +48,9 @@ export function useItemSync(listId: string) {
       if (err instanceof ApiError) {
         update((current) => {
           const failed = current.queue.filter((q) => q.failed);
-          const attempted = markAttempted(current.queue.filter((q) => !q.failed));
+          const attempted = markAttempted(
+            current.queue.filter((q) => !q.failed),
+          );
           return { ...current, queue: [...failed, ...attempted] };
         });
       }

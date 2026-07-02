@@ -172,6 +172,7 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   attempts (no auto-retry after that, no manual-retry UI yet). `clientOpId`
   stays fixed across retries — safe because `sync`'s `applied_ops` dedup
   (see `sync/` below) makes replays idempotent.
+
 - **`features/`** — `toggle-item` (flip `checked`), `edit-item` (quantity
   stepper, category chips, delete — bundled as one slice since it's one UX
   scene, the "expanded row"), `add-item` (name input with autocomplete
@@ -238,7 +239,7 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   manual state patching, this isn't a hot path. If a delete/leave empties
   `lists`, `refreshLists` creates a fallback "Мои покупки" list, the same
   pattern used for a brand-new account's first list. A network error (not `ApiError`) during the initial `GET /lists`+`GET
-  /categories` falls back to a `localStorage` cache (`kupi:bootstrap`,
+/categories` falls back to a `localStorage` cache (`kupi:bootstrap`,
   written by `app/model/bootstrap-cache.ts` on every `lists`/`categories`
   change) — covers reopening the app offline. No cache yet (device's very
   first launch, offline) — unchanged empty-screen behavior, a known gap, not

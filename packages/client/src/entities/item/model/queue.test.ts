@@ -1,5 +1,7 @@
 import { expect, test } from 'vitest';
+
 import type { ItemChange } from '@kupi/shared';
+
 import { enqueue, markAttempted } from './queue';
 
 const change: ItemChange = {

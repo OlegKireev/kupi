@@ -1,4 +1,5 @@
 import { beforeEach, expect, test } from 'vitest';
+
 import type { ListCache } from './local-cache';
 import { loadListCache, saveListCache } from './local-cache';
 

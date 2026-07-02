@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+
 import type { Item } from '@kupi/shared';
+
 import {
   ActionIcon,
   Checkbox,
@@ -8,6 +10,7 @@ import {
   ListIcon,
   Stack,
 } from '@/shared/ui';
+
 import styles from './styles.module.css';
 
 type Props = {

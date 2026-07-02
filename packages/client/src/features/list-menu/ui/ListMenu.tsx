@@ -24,7 +24,12 @@ type Props = {
   failedCount: number;
 };
 
-export function ListMenu({ list, onListsChanged, pendingCount, failedCount }: Props) {
+export function ListMenu({
+  list,
+  onListsChanged,
+  pendingCount,
+  failedCount,
+}: Props) {
   const {
     memberCount,
     codeModal,

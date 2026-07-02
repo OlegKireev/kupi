@@ -42,6 +42,7 @@ packages/client/
 ### Task 1: Репозиторий — `deleteList`, `removeListMember`, `countListMembers`
 
 **Files:**
+
 - Modify: `packages/server/src/lists/repository.ts`
 
 - [ ] **Step 1: Добавить три функции в конец файла**
@@ -69,7 +70,10 @@ export async function removeListMember(
 }
 
 /** Считает число участников списка. */
-export async function countListMembers(db: Db, listId: string): Promise<number> {
+export async function countListMembers(
+  db: Db,
+  listId: string,
+): Promise<number> {
   const rows = await db
     .selectFrom('listMembers')
     .select('accountId')
@@ -96,6 +100,7 @@ git commit -m "feat(server): add list deletion and member-count repository queri
 ### Task 2: `DELETE /lists/:id`
 
 **Files:**
+
 - Modify: `packages/server/src/lists/routes.ts`
 - Modify: `packages/server/src/lists/routes.test.ts`
 
@@ -131,14 +136,28 @@ test('owner deletes list — gone for owner and all members', async () => {
   assert.equal(deleteRes.statusCode, 204);
 
   const ownerLists = (
-    await app.inject({ method: 'GET', url: '/lists', headers: { cookie: owner.cookie } })
+    await app.inject({
+      method: 'GET',
+      url: '/lists',
+      headers: { cookie: owner.cookie },
+    })
   ).json() as List[];
-  assert.equal(ownerLists.some((l) => l.id === listId), false);
+  assert.equal(
+    ownerLists.some((l) => l.id === listId),
+    false,
+  );
 
   const guestLists = (
-    await app.inject({ method: 'GET', url: '/lists', headers: { cookie: guest.cookie } })
+    await app.inject({
+      method: 'GET',
+      url: '/lists',
+      headers: { cookie: guest.cookie },
+    })
   ).json() as List[];
-  assert.equal(guestLists.some((l) => l.id === listId), false);
+  assert.equal(
+    guestLists.some((l) => l.id === listId),
+    false,
+  );
 
   await app.close();
 });
@@ -170,14 +189,28 @@ test('member leaves list — list still exists for owner', async () => {
   assert.equal(leaveRes.statusCode, 204);
 
   const guestLists = (
-    await app.inject({ method: 'GET', url: '/lists', headers: { cookie: guest.cookie } })
+    await app.inject({
+      method: 'GET',
+      url: '/lists',
+      headers: { cookie: guest.cookie },
+    })
   ).json() as List[];
-  assert.equal(guestLists.some((l) => l.id === listId), false);
+  assert.equal(
+    guestLists.some((l) => l.id === listId),
+    false,
+  );
 
   const ownerLists = (
-    await app.inject({ method: 'GET', url: '/lists', headers: { cookie: owner.cookie } })
+    await app.inject({
+      method: 'GET',
+      url: '/lists',
+      headers: { cookie: owner.cookie },
+    })
   ).json() as List[];
-  assert.equal(ownerLists.some((l) => l.id === listId), true);
+  assert.equal(
+    ownerLists.some((l) => l.id === listId),
+    true,
+  );
 
   await app.close();
 });
@@ -227,22 +260,22 @@ import {
 Добавить роут в конец `listRoutes` (перед закрывающей `}`):
 
 ```ts
-  // DELETE /lists/:id — владелец удаляет список целиком, участник выходит из него
-  typedApp.delete(
-    '/lists/:id',
-    { schema: { params: ListParamsSchema } },
-    async (req, reply) => {
-      if (!(await isMember(app.db, req.params.id, req.accountId))) {
-        return reply.code(404).send({ error: 'not_found' });
-      }
-      if (await isOwner(app.db, req.params.id, req.accountId)) {
-        await deleteList(app.db, req.params.id);
-      } else {
-        await removeListMember(app.db, req.params.id, req.accountId);
-      }
-      return reply.code(204).send();
-    },
-  );
+// DELETE /lists/:id — владелец удаляет список целиком, участник выходит из него
+typedApp.delete(
+  '/lists/:id',
+  { schema: { params: ListParamsSchema } },
+  async (req, reply) => {
+    if (!(await isMember(app.db, req.params.id, req.accountId))) {
+      return reply.code(404).send({ error: 'not_found' });
+    }
+    if (await isOwner(app.db, req.params.id, req.accountId)) {
+      await deleteList(app.db, req.params.id);
+    } else {
+      await removeListMember(app.db, req.params.id, req.accountId);
+    }
+    return reply.code(204).send();
+  },
+);
 ```
 
 - [ ] **Step 4: Запустить тесты, убедиться что проходят**
@@ -262,6 +295,7 @@ git commit -m "feat(server): add DELETE /lists/:id (owner delete, member leave)"
 ### Task 3: `GET /lists/:id/members`
 
 **Files:**
+
 - Modify: `packages/server/src/lists/routes.ts`
 - Modify: `packages/server/src/lists/routes.test.ts`
 
@@ -333,17 +367,17 @@ Expected: FAIL — `GET /lists/:id/members` не зарегистрирован,
 В `packages/server/src/lists/routes.ts` — добавить `countListMembers` в импорт из `@/lists/repository`, добавить роут в конец `listRoutes`:
 
 ```ts
-  // GET /lists/:id/members — число участников списка (без имён, только count)
-  typedApp.get(
-    '/lists/:id/members',
-    { schema: { params: ListParamsSchema } },
-    async (req, reply) => {
-      if (!(await isMember(app.db, req.params.id, req.accountId))) {
-        return reply.code(404).send({ error: 'not_found' });
-      }
-      return { count: await countListMembers(app.db, req.params.id) };
-    },
-  );
+// GET /lists/:id/members — число участников списка (без имён, только count)
+typedApp.get(
+  '/lists/:id/members',
+  { schema: { params: ListParamsSchema } },
+  async (req, reply) => {
+    if (!(await isMember(app.db, req.params.id, req.accountId))) {
+      return reply.code(404).send({ error: 'not_found' });
+    }
+    return { count: await countListMembers(app.db, req.params.id) };
+  },
+);
 ```
 
 - [ ] **Step 4: Запустить тесты, убедиться что проходят**
@@ -368,6 +402,7 @@ git commit -m "feat(server): add GET /lists/:id/members"
 ### Task 4: Клиент — `patch`/`del` в `shared/api`
 
 **Files:**
+
 - Modify: `packages/client/src/shared/api/client.ts`
 - Modify: `packages/client/src/shared/api/index.ts`
 
@@ -411,6 +446,7 @@ git commit -m "feat(client): add patch and del to shared api client"
 ### Task 5: `entities/list` — новые запросы
 
 **Files:**
+
 - Modify: `packages/client/src/entities/list/api/list-api.ts`
 - Modify: `packages/client/src/entities/list/index.ts`
 
@@ -481,6 +517,7 @@ git commit -m "feat(client): add list rename/delete/invite/member-count queries"
 ### Task 6: Иконки Phosphor + недостающие Mantine-компоненты в `shared/ui`
 
 **Files:**
+
 - Modify: `packages/client/package.json` (через `pnpm add`)
 - Modify: `packages/client/src/shared/ui/index.ts`
 
@@ -529,6 +566,7 @@ git commit -m "chore(client): add @phosphor-icons/react and Menu/Modal/TextInput
 ### Task 7: `features/list-switcher`
 
 **Files:**
+
 - Create: `packages/client/src/features/list-switcher/ui/ListSwitcher.tsx`
 - Create: `packages/client/src/features/list-switcher/index.ts`
 
@@ -561,7 +599,12 @@ type Props = {
   onListsChanged: (selectId?: string) => void;
 };
 
-export function ListSwitcher({ list, lists, onSwitchList, onListsChanged }: Props) {
+export function ListSwitcher({
+  list,
+  lists,
+  onSwitchList,
+  onListsChanged,
+}: Props) {
   const [newListOpen, setNewListOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
 
@@ -603,7 +646,9 @@ export function ListSwitcher({ list, lists, onSwitchList, onListsChanged }: Prop
             </Menu.Item>
           ))}
           <Menu.Divider />
-          <Menu.Item onClick={() => setNewListOpen(true)}>Новый список</Menu.Item>
+          <Menu.Item onClick={() => setNewListOpen(true)}>
+            Новый список
+          </Menu.Item>
         </Menu.Dropdown>
       </Menu>
 
@@ -654,6 +699,7 @@ git commit -m "feat(client): add features/list-switcher slice"
 ### Task 8: `features/list-menu`
 
 **Files:**
+
 - Create: `packages/client/src/features/list-menu/api/link-code-api.ts`
 - Create: `packages/client/src/features/list-menu/ui/ListMenu.tsx`
 - Create: `packages/client/src/features/list-menu/index.ts`
@@ -685,14 +731,7 @@ import {
   getMemberCount,
   renameList,
 } from '@/entities/list';
-import {
-  ActionIcon,
-  Button,
-  Menu,
-  Modal,
-  Text,
-  TextInput,
-} from '@/shared/ui';
+import { ActionIcon, Button, Menu, Modal, Text, TextInput } from '@/shared/ui';
 import { createLinkCode } from '../api/link-code-api';
 
 type Props = {
@@ -782,7 +821,9 @@ export function ListMenu({ list, onListsChanged }: Props) {
           mt="md"
           fullWidth
           leftSection={<Copy size={16} />}
-          onClick={() => void navigator.clipboard.writeText(codeModal?.code ?? '')}
+          onClick={() =>
+            void navigator.clipboard.writeText(codeModal?.code ?? '')
+          }
         >
           Копировать
         </Button>
@@ -853,6 +894,7 @@ git commit -m "feat(client): add features/list-menu slice"
 ### Task 9: `widgets/list-screen` — шапка
 
 **Files:**
+
 - Modify: `packages/client/src/widgets/list-screen/ui/ListScreen.tsx`
 
 - [ ] **Step 1: Заменить заголовок на `ListSwitcher` + `ListMenu`, расширить пропсы**
@@ -1000,6 +1042,7 @@ git commit -m "feat(client): wire list switcher and menu into list screen header
 ### Task 10: `pages/list-screen` + `app/App.tsx` — `lists`/`activeListId`
 
 **Files:**
+
 - Modify: `packages/client/src/pages/list-screen/ui/ListScreenPage.tsx`
 - Modify: `packages/client/src/app/App.tsx`
 
@@ -1057,7 +1100,10 @@ export function App() {
     bootstrapped.current = true;
     (async () => {
       try {
-        const [fetchedLists, cats] = await Promise.all([getLists(), getCategories()]);
+        const [fetchedLists, cats] = await Promise.all([
+          getLists(),
+          getCategories(),
+        ]);
         setLists(fetchedLists);
         setActiveListId(fetchedLists[0]?.id ?? null);
         setCategories(cats);
@@ -1124,6 +1170,7 @@ git commit -m "feat(client): lift lists/activeListId state into App for list swi
 ### Task 11: Ручная сквозная проверка + обновление `CLAUDE.md`
 
 **Files:**
+
 - Modify: `CLAUDE.md`
 
 - [ ] **Step 1: Запустить сервер и клиент**

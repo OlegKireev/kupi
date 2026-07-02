@@ -1,4 +1,5 @@
 import type { Bootstrap, List } from '@kupi/shared';
+
 import { del, get, patch, post } from '@/shared/api';
 
 export function getLists(): Promise<List[]> {

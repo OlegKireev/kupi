@@ -1,4 +1,5 @@
 import type { Bootstrap, Category, List } from '@kupi/shared';
+
 import { ListScreen } from '@/widgets/list-screen';
 
 type Props = {

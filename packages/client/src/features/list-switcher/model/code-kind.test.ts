@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+
 import { codeKind } from './code-kind';
 
 test('8-character code is a list invite', () => {

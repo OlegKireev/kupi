@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+
 import type { Bootstrap, Category, List } from '@kupi/shared';
-import { createAccount, createList, getLists } from '@/entities/list';
+
 import { getCategories } from '@/entities/category';
+import { createAccount, createList, getLists } from '@/entities/list';
 import { ListScreenPage } from '@/pages/list-screen';
 import { ApiError } from '@/shared/api';
-import { loadBootstrapCache, saveBootstrapCache } from './model/bootstrap-cache';
+import {
+  loadBootstrapCache,
+  saveBootstrapCache,
+} from './model/bootstrap-cache';
 
 export function App() {
   const [lists, setLists] = useState<List[]>([]);
@@ -17,7 +22,10 @@ export function App() {
     bootstrapped.current = true;
     (async () => {
       try {
-        const [fetchedLists, cats] = await Promise.all([getLists(), getCategories()]);
+        const [fetchedLists, cats] = await Promise.all([
+          getLists(),
+          getCategories(),
+        ]);
         setLists(fetchedLists);
         setActiveListId(fetchedLists[0]?.id ?? null);
         setCategories(cats);

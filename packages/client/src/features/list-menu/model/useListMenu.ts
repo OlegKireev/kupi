@@ -1,5 +1,7 @@
 import { useState } from 'react';
+
 import type { List } from '@kupi/shared';
+
 import {
   createInvite,
   deleteList,
@@ -19,7 +21,12 @@ type Params = {
 
 type CodeModalState = { title: string; code: string } | null;
 
-export function useListMenu({ list, onListsChanged, pendingCount, failedCount }: Params) {
+export function useListMenu({
+  list,
+  onListsChanged,
+  pendingCount,
+  failedCount,
+}: Params) {
   const [memberCount, setMemberCount] = useState<number | null>(null);
   const [codeModal, setCodeModal] = useState<CodeModalState>(null);
   const [renameOpen, setRenameOpen] = useState(false);

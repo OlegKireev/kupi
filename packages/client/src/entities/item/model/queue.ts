@@ -8,7 +8,10 @@ export type QueuedChange = {
 
 const MAX_ATTEMPTS = 3;
 
-export function enqueue(queue: QueuedChange[], change: ItemChange): QueuedChange[] {
+export function enqueue(
+  queue: QueuedChange[],
+  change: ItemChange,
+): QueuedChange[] {
   return [...queue, { change, attempts: 0, failed: false }];
 }
 

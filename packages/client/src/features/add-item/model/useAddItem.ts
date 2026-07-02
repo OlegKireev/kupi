@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
+
 import type { ItemChange, Suggestion } from '@kupi/shared';
+
 import { generateId } from '@/shared/lib/ids';
 import { getSuggestions } from '../api/suggestions-api';
 

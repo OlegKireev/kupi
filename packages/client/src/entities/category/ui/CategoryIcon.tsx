@@ -1,4 +1,5 @@
 import type { Category } from '@kupi/shared';
+
 import styles from './styles.module.css';
 
 type Props = { category: Category | undefined };

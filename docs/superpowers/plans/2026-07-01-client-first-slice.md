@@ -59,6 +59,7 @@ packages/client/
 ### Task 1: Инфраструктура — Vite-прокси, `shared/lib`, `shared/config`, `shared/api`
 
 **Files:**
+
 - Modify: `packages/client/vite.config.ts`
 - Create: `packages/client/src/shared/lib/ids.ts`
 - Create: `packages/client/src/shared/config/env.ts`
@@ -140,7 +141,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   });
   if (!res.ok) {
-    throw new ApiError(res.status, `${init?.method ?? 'GET'} ${path} -> ${res.status}`);
+    throw new ApiError(
+      res.status,
+      `${init?.method ?? 'GET'} ${path} -> ${res.status}`,
+    );
   }
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
@@ -174,6 +178,7 @@ git commit -m "feat(client): add dev proxy and shared api/id/env infra"
 ### Task 2: `entities/list`
 
 **Files:**
+
 - Create: `packages/client/src/entities/list/api/list-api.ts`
 - Create: `packages/client/src/entities/list/index.ts`
 
@@ -216,6 +221,7 @@ git commit -m "feat(client): add entities/list slice"
 ### Task 3: `entities/category`
 
 **Files:**
+
 - Create: `packages/client/src/entities/category/api/category-api.ts`
 - Create: `packages/client/src/entities/category/ui/CategoryIcon.tsx`
 - Create: `packages/client/src/entities/category/index.ts`
@@ -245,7 +251,10 @@ export function CategoryIcon({ category }: Props) {
   return (
     <span className="category-icon">
       {category.icon}
-      <span className="category-dot" style={{ backgroundColor: category.color }} />
+      <span
+        className="category-dot"
+        style={{ backgroundColor: category.color }}
+      />
     </span>
   );
 }
@@ -276,6 +285,7 @@ git commit -m "feat(client): add entities/category slice"
 ### Task 4: `entities/item`
 
 **Files:**
+
 - Create: `packages/client/src/entities/item/api/item-api.ts`
 - Create: `packages/client/src/entities/item/model/merge-items.ts`
 - Create: `packages/client/src/entities/item/ui/ItemRow.tsx`
@@ -287,7 +297,10 @@ git commit -m "feat(client): add entities/category slice"
 import type { SyncRequest, SyncResponse } from '@kupi/shared';
 import { post } from '@/shared/api/client';
 
-export function syncItems(listId: string, req: SyncRequest): Promise<SyncResponse> {
+export function syncItems(
+  listId: string,
+  req: SyncRequest,
+): Promise<SyncResponse> {
   return post<SyncResponse>(`/lists/${listId}/sync`, req);
 }
 ```
@@ -324,8 +337,15 @@ type Props = {
 export function ItemRow({ item, categoryIcon, onToggle, onOpen }: Props) {
   return (
     <li className={`item-row${item.checked ? ' item-row--checked' : ''}`}>
-      <input type="checkbox" checked={item.checked} onChange={onToggle} />
-      <span className="item-row__name" onClick={onOpen}>
+      <input
+        type="checkbox"
+        checked={item.checked}
+        onChange={onToggle}
+      />
+      <span
+        className="item-row__name"
+        onClick={onOpen}
+      >
         {item.name}
       </span>
       {categoryIcon}
@@ -360,6 +380,7 @@ git commit -m "feat(client): add entities/item slice"
 ### Task 5: `features/toggle-item`
 
 **Files:**
+
 - Create: `packages/client/src/features/toggle-item/model/useToggleItem.ts`
 - Create: `packages/client/src/features/toggle-item/index.ts`
 
@@ -419,6 +440,7 @@ git commit -m "feat(client): add features/toggle-item slice"
 Один слайс на степпер количества, чипы категорий и удаление — по спеку это одна UX-сцена «раскрытая строка», не три независимых фичи.
 
 **Files:**
+
 - Create: `packages/client/src/features/edit-item/model/useEditItem.ts`
 - Create: `packages/client/src/features/edit-item/ui/ItemEditor.tsx`
 - Create: `packages/client/src/features/edit-item/index.ts`
@@ -438,12 +460,20 @@ type Params = {
 
 export function useEditItem({ listId, lastSeenSeq, onSynced }: Params) {
   const apply = async (change: ItemChange): Promise<void> => {
-    const response = await syncItems(listId, { lastSeenSeq, changes: [change] });
+    const response = await syncItems(listId, {
+      lastSeenSeq,
+      changes: [change],
+    });
     onSynced(response);
   };
 
   const setQuantity = (item: Item, quantity: number) =>
-    apply({ itemId: item.id, clientOpId: generateId(), op: 'upsert', fields: { quantity } });
+    apply({
+      itemId: item.id,
+      clientOpId: generateId(),
+      op: 'upsert',
+      fields: { quantity },
+    });
 
   const setCategory = (item: Item, categoryId: string) =>
     apply({
@@ -454,7 +484,12 @@ export function useEditItem({ listId, lastSeenSeq, onSynced }: Params) {
     });
 
   const deleteItem = (item: Item) =>
-    apply({ itemId: item.id, clientOpId: generateId(), op: 'delete', fields: {} });
+    apply({
+      itemId: item.id,
+      clientOpId: generateId(),
+      op: 'delete',
+      fields: {},
+    });
 
   return { setQuantity, setCategory, deleteItem };
 }
@@ -497,7 +532,10 @@ export function ItemEditor({
 
   return (
     <li className="item-row item-row--expanded">
-      <div className="item-editor__header" onClick={onClose}>
+      <div
+        className="item-editor__header"
+        onClick={onClose}
+      >
         <span className="item-row__name">{item.name}</span>
         <CategoryIcon category={category} />
       </div>
@@ -509,7 +547,10 @@ export function ItemEditor({
           −
         </button>
         <span>{item.quantity}</span>
-        <button type="button" onClick={() => void setQuantity(item, item.quantity + 1)}>
+        <button
+          type="button"
+          onClick={() => void setQuantity(item, item.quantity + 1)}
+        >
           +
         </button>
       </div>
@@ -565,6 +606,7 @@ git commit -m "feat(client): add features/edit-item slice"
 Подсказки — только `name`+`count` (см. «Находка при планировании» выше): без иконки категории, выбор подсказки просто подставляет имя в поле, не создаёт товар и не проставляет категорию.
 
 **Files:**
+
 - Create: `packages/client/src/features/add-item/api/suggestions-api.ts`
 - Create: `packages/client/src/features/add-item/model/useAddItem.ts`
 - Create: `packages/client/src/features/add-item/ui/AddItemInput.tsx`
@@ -704,6 +746,7 @@ git commit -m "feat(client): add features/add-item slice"
 Композиция: заголовок списка, `AddItemInput`, список строк (`ItemRow` ↔ `ItemEditor` по `expandedItemId`), пустое состояние с подсказкой (`items.length === 0`).
 
 **Files:**
+
 - Create: `packages/client/src/widgets/list-screen/ui/ListScreen.tsx`
 - Create: `packages/client/src/widgets/list-screen/index.ts`
 
@@ -750,7 +793,11 @@ export function ListScreen({ list, categories }: Props) {
   return (
     <div>
       <h1 className="list-screen__title">{list.name}</h1>
-      <AddItemInput listId={list.id} lastSeenSeq={lastSeenSeq} onSynced={onSyncedPinned} />
+      <AddItemInput
+        listId={list.id}
+        lastSeenSeq={lastSeenSeq}
+        onSynced={onSyncedPinned}
+      />
       {items.length === 0 && (
         <p className="add-item__hint">
           Список пуст. Начни печатать выше — появятся подсказки из твоих частых
@@ -774,7 +821,9 @@ export function ListScreen({ list, categories }: Props) {
               key={item.id}
               item={item}
               categoryIcon={
-                <CategoryIcon category={categories.find((c) => c.id === item.categoryId)} />
+                <CategoryIcon
+                  category={categories.find((c) => c.id === item.categoryId)}
+                />
               }
               onToggle={() => toggle(item)}
               onOpen={() => setExpandedItemId(item.id)}
@@ -812,6 +861,7 @@ git commit -m "feat(client): add widgets/list-screen slice"
 Поток данных при загрузке (см. FSD-спек): `GET /lists` + `GET /categories` параллельно; если упало `401` (новое устройство) → `POST /accounts`, который возвращает `Bootstrap` целиком.
 
 **Files:**
+
 - Create: `packages/client/src/pages/list-screen/index.tsx`
 - Create: `packages/client/src/app/styles/globals.css`
 - Modify: `packages/client/src/app/App.tsx`
@@ -826,7 +876,12 @@ import { ListScreen } from '@/widgets/list-screen';
 type Props = { list: List; categories: Category[] };
 
 export function ListScreenPage({ list, categories }: Props) {
-  return <ListScreen list={list} categories={categories} />;
+  return (
+    <ListScreen
+      list={list}
+      categories={categories}
+    />
+  );
 }
 ```
 
@@ -979,7 +1034,12 @@ export function App() {
   }, []);
 
   if (!list) return null;
-  return <ListScreenPage list={list} categories={categories} />;
+  return (
+    <ListScreenPage
+      list={list}
+      categories={categories}
+    />
+  );
 }
 ```
 
@@ -1028,6 +1088,7 @@ git commit -m "feat(client): wire up bootstrap flow and list screen page"
 ### Task 10: `steiger` — проверка границ FSD-слоёв
 
 **Files:**
+
 - Create: `packages/client/steiger.config.ts`
 - Modify: `packages/client/package.json` (добавится `pnpm add` автоматически)
 

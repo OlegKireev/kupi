@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+
 import { getSyncStatusText } from './sync-status';
 
 test('everything synced and no failures', () => {

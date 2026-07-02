@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+
 import type { Bootstrap, Category, List } from '@kupi/shared';
+
 import { CategoryIcon } from '@/entities/category';
 import { ItemRow, useItemSync } from '@/entities/item';
 import { AddItemInput } from '@/features/add-item';
@@ -26,7 +28,9 @@ export function ListScreen({
   onListsChanged,
   onAccountLinked,
 }: Props) {
-  const { items, pendingCount, failedCount, applyChange } = useItemSync(list.id);
+  const { items, pendingCount, failedCount, applyChange } = useItemSync(
+    list.id,
+  );
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   const sortedItems = useMemo(

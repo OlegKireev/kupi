@@ -60,6 +60,7 @@ CLAUDE.md                                                       # докумен
 ### Task 1: `vitest` для `@kupi/client`
 
 **Files:**
+
 - Create: `packages/client/vitest.config.ts`
 - Modify: `packages/client/package.json`
 - Modify: `package.json` (root)
@@ -135,6 +136,7 @@ git commit -m "build(client): add vitest test runner"
 ### Task 2: `entities/item/model/queue.ts` — ретрай-политика очереди
 
 **Files:**
+
 - Create: `packages/client/src/entities/item/model/queue.ts`
 - Test: `packages/client/src/entities/item/model/queue.test.ts`
 
@@ -196,7 +198,10 @@ export type QueuedChange = {
 
 const MAX_ATTEMPTS = 3;
 
-export function enqueue(queue: QueuedChange[], change: ItemChange): QueuedChange[] {
+export function enqueue(
+  queue: QueuedChange[],
+  change: ItemChange,
+): QueuedChange[] {
   return [...queue, { change, attempts: 0, failed: false }];
 }
 
@@ -225,6 +230,7 @@ git commit -m "feat(client): add offline queue retry-policy reducer"
 ### Task 3: `entities/item/model/apply-change-locally.ts` — оптимистичный патч
 
 **Files:**
+
 - Create: `packages/client/src/entities/item/model/apply-change-locally.ts`
 - Test: `packages/client/src/entities/item/model/apply-change-locally.test.ts`
 
@@ -256,7 +262,11 @@ test('upsert on an unknown itemId prepends a new item', () => {
   };
   const result = applyChangeLocally([existing], change, 'list-1');
   expect(result).toHaveLength(2);
-  expect(result[0]).toMatchObject({ id: 'item-2', name: 'Хлеб', listId: 'list-1' });
+  expect(result[0]).toMatchObject({
+    id: 'item-2',
+    name: 'Хлеб',
+    listId: 'list-1',
+  });
   expect(result[1]).toEqual(existing);
 });
 
@@ -268,11 +278,18 @@ test('upsert on a known itemId patches only the given fields', () => {
     fields: { checked: true },
   };
   const result = applyChangeLocally([existing], change, 'list-1');
-  expect(result).toEqual([{ ...existing, checked: true, updatedAt: result[0]!.updatedAt }]);
+  expect(result).toEqual([
+    { ...existing, checked: true, updatedAt: result[0]!.updatedAt },
+  ]);
 });
 
 test('delete removes the item by id', () => {
-  const change: ItemChange = { itemId: 'item-1', clientOpId: 'op-1', op: 'delete', fields: {} };
+  const change: ItemChange = {
+    itemId: 'item-1',
+    clientOpId: 'op-1',
+    op: 'delete',
+    fields: {},
+  };
   expect(applyChangeLocally([existing], change, 'list-1')).toEqual([]);
 });
 
@@ -307,7 +324,9 @@ export function applyChangeLocally(
   const index = items.findIndex((item) => item.id === change.itemId);
 
   if (change.op === 'delete') {
-    return index === -1 ? items : items.filter((item) => item.id !== change.itemId);
+    return index === -1
+      ? items
+      : items.filter((item) => item.id !== change.itemId);
   }
 
   if (index === -1) {
@@ -350,6 +369,7 @@ git commit -m "feat(client): add optimistic local item patch"
 ### Task 4: `entities/item/model/local-cache.ts` — `localStorage`-обёртка
 
 **Files:**
+
 - Create: `packages/client/src/entities/item/model/local-cache.ts`
 - Test: `packages/client/src/entities/item/model/local-cache.test.ts`
 
@@ -438,6 +458,7 @@ git commit -m "feat(client): add localStorage cache for list items and queue"
 ### Task 5: `entities/item/model/useItemSync.ts` — центральный синк-хук
 
 **Files:**
+
 - Create: `packages/client/src/entities/item/model/useItemSync.ts`
 
 Не покрывается автотестом — логика внутри уже покрыта тестами Task 2—4 (`enqueue`/`markAttempted`/`applyChangeLocally`/кеш), а хук — их композиция с React-стейтом и сетевым вызовом; спека сознательно ограничивает автотесты чистой логикой. Корректность хука проверяется вручную в Task 12.
@@ -489,7 +510,10 @@ export function useItemSync(listId: string) {
       }));
     } catch (err) {
       if (err instanceof ApiError) {
-        update((current) => ({ ...current, queue: markAttempted(current.queue) }));
+        update((current) => ({
+          ...current,
+          queue: markAttempted(current.queue),
+        }));
       }
       // сетевая ошибка (не ApiError) — очередь не трогаем, ждём следующий `online`
     } finally {
@@ -546,6 +570,7 @@ git commit -m "feat(client): add centralized item sync hook"
 Один атомарный рефакторинг: три feature-хука перестают знать про `syncItems`/сеть, `ListScreen` переходит на `useItemSync`, публичный API `entities/item` сужается. Разбито по файлам, но коммит один — промежуточные состояния между файлами не компилируются (сигнатуры меняются с двух сторон вызова разом).
 
 **Files:**
+
 - Modify: `packages/client/src/features/toggle-item/model/useToggleItem.ts`
 - Modify: `packages/client/src/features/add-item/model/useAddItem.ts`
 - Modify: `packages/client/src/features/add-item/ui/AddItemInput.tsx`
@@ -690,7 +715,12 @@ type Params = {
 
 export function useEditItem({ applyChange }: Params) {
   const setQuantity = (item: Item, quantity: number) =>
-    applyChange({ itemId: item.id, clientOpId: generateId(), op: 'upsert', fields: { quantity } });
+    applyChange({
+      itemId: item.id,
+      clientOpId: generateId(),
+      op: 'upsert',
+      fields: { quantity },
+    });
 
   const setCategory = (item: Item, categoryId: string) =>
     applyChange({
@@ -701,7 +731,12 @@ export function useEditItem({ applyChange }: Params) {
     });
 
   const deleteItem = (item: Item) =>
-    applyChange({ itemId: item.id, clientOpId: generateId(), op: 'delete', fields: {} });
+    applyChange({
+      itemId: item.id,
+      clientOpId: generateId(),
+      op: 'delete',
+      fields: {},
+    });
 
   return { setQuantity, setCategory, deleteItem };
 }
@@ -928,6 +963,7 @@ EOF
 ### Task 7: `shared/lib/useOnlineStatus.ts`
 
 **Files:**
+
 - Create: `packages/client/src/shared/lib/useOnlineStatus.ts`
 
 Тонкая обёртка над `window`-событиями `online`/`offline` — не покрывается автотестом (нет `renderHook`-обвязки в проекте, заводить её ради одного хука избыточно); проверяется вручную вместе с Task 9.
@@ -972,6 +1008,7 @@ git commit -m "feat(client): add useOnlineStatus hook"
 ### Task 8: `features/list-menu/model/sync-status.ts`
 
 **Files:**
+
 - Create: `packages/client/src/features/list-menu/model/sync-status.ts`
 - Test: `packages/client/src/features/list-menu/model/sync-status.test.ts`
 
@@ -1014,7 +1051,8 @@ export function getSyncStatusText(
   online: boolean,
 ): string {
   if (failedCount > 0) return `${failedCount} не отправлено`;
-  if (pendingCount > 0) return online ? 'Синхронизация…' : `Офлайн, ${pendingCount} в очереди`;
+  if (pendingCount > 0)
+    return online ? 'Синхронизация…' : `Офлайн, ${pendingCount} в очереди`;
   return 'Синхронизировано';
 }
 ```
@@ -1036,6 +1074,7 @@ git commit -m "feat(client): add sync-status text derivation"
 ### Task 9: Показать sync-статус в меню списка
 
 **Files:**
+
 - Modify: `packages/client/src/features/list-menu/model/useListMenu.ts`
 - Modify: `packages/client/src/features/list-menu/ui/ListMenu.tsx`
 - Modify: `packages/client/src/widgets/list-screen/ui/ListScreen.tsx`
@@ -1064,7 +1103,12 @@ type Params = {
 
 type CodeModalState = { title: string; code: string } | null;
 
-export function useListMenu({ list, onListsChanged, pendingCount, failedCount }: Params) {
+export function useListMenu({
+  list,
+  onListsChanged,
+  pendingCount,
+  failedCount,
+}: Params) {
   const [memberCount, setMemberCount] = useState<number | null>(null);
   const [codeModal, setCodeModal] = useState<CodeModalState>(null);
   const [renameOpen, setRenameOpen] = useState(false);
@@ -1164,7 +1208,12 @@ type Props = {
   failedCount: number;
 };
 
-export function ListMenu({ list, onListsChanged, pendingCount, failedCount }: Props) {
+export function ListMenu({
+  list,
+  onListsChanged,
+  pendingCount,
+  failedCount,
+}: Props) {
   const {
     memberCount,
     codeModal,
@@ -1299,16 +1348,16 @@ export function ListMenu({ list, onListsChanged, pendingCount, failedCount }: Pr
 - [ ] **Step 3: `ListScreen.tsx` — прокинуть `pendingCount`/`failedCount`**
 
 ```ts
-  const { items, pendingCount, failedCount, applyChange } = useItemSync(list.id);
+const { items, pendingCount, failedCount, applyChange } = useItemSync(list.id);
 ```
 
 ```tsx
-        <ListMenu
-          list={list}
-          onListsChanged={onListsChanged}
-          pendingCount={pendingCount}
-          failedCount={failedCount}
-        />
+<ListMenu
+  list={list}
+  onListsChanged={onListsChanged}
+  pendingCount={pendingCount}
+  failedCount={failedCount}
+/>
 ```
 
 - [ ] **Step 4: Проверить типы, границы FSD и линт**
@@ -1330,6 +1379,7 @@ git commit -m "feat(client): show sync status in the list menu"
 ### Task 10: Офлайн cold-start (`kupi:bootstrap`)
 
 **Files:**
+
 - Create: `packages/client/src/app/model/bootstrap-cache.ts`
 - Modify: `packages/client/src/app/App.tsx`
 
@@ -1355,7 +1405,10 @@ export function loadBootstrapCache(): BootstrapCache | null {
   }
 }
 
-export function saveBootstrapCache(lists: List[], categories: Category[]): void {
+export function saveBootstrapCache(
+  lists: List[],
+  categories: Category[],
+): void {
   localStorage.setItem(KEY, JSON.stringify({ lists, categories }));
 }
 ```
@@ -1371,7 +1424,10 @@ import { createAccount, createList, getLists } from '@/entities/list';
 import { getCategories } from '@/entities/category';
 import { ListScreenPage } from '@/pages/list-screen';
 import { ApiError } from '@/shared/api';
-import { loadBootstrapCache, saveBootstrapCache } from './model/bootstrap-cache';
+import {
+  loadBootstrapCache,
+  saveBootstrapCache,
+} from './model/bootstrap-cache';
 
 export function App() {
   const [lists, setLists] = useState<List[]>([]);
@@ -1384,7 +1440,10 @@ export function App() {
     bootstrapped.current = true;
     (async () => {
       try {
-        const [fetchedLists, cats] = await Promise.all([getLists(), getCategories()]);
+        const [fetchedLists, cats] = await Promise.all([
+          getLists(),
+          getCategories(),
+        ]);
         setLists(fetchedLists);
         setActiveListId(fetchedLists[0]?.id ?? null);
         setCategories(cats);
@@ -1466,6 +1525,7 @@ git commit -m "feat(client): fall back to cached bootstrap when offline on cold 
 Глобальная инструкция пользователя требует держать `CLAUDE.md` синхронным с архитектурой в рамках той же задачи, а не отдельным шагом «потом» — эта задача меняет и структуру клиента (новый `useItemSync`, офлайн-кеш), и скрипты (`pnpm test` теперь покрывает оба пакета).
 
 **Files:**
+
 - Modify: `CLAUDE.md` (в корне репозитория)
 
 - [ ] **Step 1: Прочитать файл**
