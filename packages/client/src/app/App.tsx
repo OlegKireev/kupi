@@ -4,6 +4,7 @@ import { createAccount, createList, getLists } from '@/entities/list';
 import { getCategories } from '@/entities/category';
 import { ListScreenPage } from '@/pages/list-screen';
 import { ApiError } from '@/shared/api';
+import { loadBootstrapCache, saveBootstrapCache } from './model/bootstrap-cache';
 
 export function App() {
   const [lists, setLists] = useState<List[]>([]);
@@ -28,10 +29,23 @@ export function App() {
           setCategories(bootstrap.categories);
           return;
         }
+        if (!(err instanceof ApiError)) {
+          const cached = loadBootstrapCache();
+          if (cached) {
+            setLists(cached.lists);
+            setActiveListId(cached.lists[0]?.id ?? null);
+            setCategories(cached.categories);
+            return;
+          }
+        }
         throw err;
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (lists.length > 0) saveBootstrapCache(lists, categories);
+  }, [lists, categories]);
 
   // Перезапрашивает GET /lists после мутации (создание/переименование/удаление
   // списка) — не hot path, ручной патч состояния не нужен. Если после
