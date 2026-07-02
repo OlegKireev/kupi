@@ -1,5 +1,5 @@
 import type { Bootstrap, List } from '@kupi/shared';
-import { useListSwitcher } from '../model/useListSwitcher';
+
 import {
   Button,
   Group,
@@ -13,6 +13,7 @@ import {
   FilePlusIcon,
   KeyIcon,
 } from '@/shared/ui';
+import { useListSwitcher } from '../model/useListSwitcher';
 
 type Props = {
   list: List;
@@ -134,8 +135,8 @@ export function ListSwitcher({
         title="Подключить устройство?"
       >
         <Text>
-          Это заменит аккаунт этого устройства. Текущие списки станут
-          недоступны с него. Продолжить?
+          Это заменит аккаунт этого устройства. Текущие списки станут недоступны
+          с него. Продолжить?
         </Text>
         <Button
           mt="md"
