@@ -260,8 +260,9 @@ linking are still out of scope — codes are copy-pasted by hand today — as is
 recovery for a device that gets orphaned by redeeming a link code onto a
 different account (`docs/backend-known-issues.md`). See
 `docs/client-known-issues.md` for review findings from that feature (an
-`onAccountLinked` edge case) not worth fixing inline, and for a stale
-service-worker gotcha that produces misleading symptoms during manual
+`onAccountLinked` edge case) not worth fixing inline, and for the
+now-fixed stale-service-worker gotcha that used to produce misleading
+symptoms during manual
 browser QA in this dev environment.
 
 `steiger.config.ts` disables two rules from `@feature-sliced/steiger-plugin`'s
