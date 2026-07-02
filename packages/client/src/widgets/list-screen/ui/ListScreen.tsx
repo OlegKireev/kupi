@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { Category, Item, List, SyncResponse } from '@kupi/shared';
+import { useMemo, useState } from 'react';
+import type { Category, List } from '@kupi/shared';
 import { CategoryIcon } from '@/entities/category';
-import { ItemRow, mergeItems, syncItems } from '@/entities/item';
+import { ItemRow, useItemSync } from '@/entities/item';
 import { AddItemInput } from '@/features/add-item';
 import { ItemEditor } from '@/features/edit-item';
 import { ListMenu } from '@/features/list-menu';
@@ -24,8 +24,7 @@ export function ListScreen({
   onSwitchList,
   onListsChanged,
 }: Props) {
-  const [items, setItems] = useState<Item[]>([]);
-  const [lastSeenSeq, setLastSeenSeq] = useState(0);
+  const { items, applyChange } = useItemSync(list.id);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   const sortedItems = useMemo(
@@ -33,29 +32,7 @@ export function ListScreen({
     [items],
   );
 
-  const onSynced = (response: SyncResponse): void => {
-    setItems((current) => mergeItems(current, response.items));
-    setLastSeenSeq(response.seq);
-  };
-
-  const onSyncedPinned = (response: SyncResponse, pinItemId: string): void => {
-    setItems((current) => {
-      const merged = mergeItems(current, response.items);
-      const pinned = merged.find((item) => item.id === pinItemId);
-      return pinned
-        ? [pinned, ...merged.filter((item) => item.id !== pinItemId)]
-        : merged;
-    });
-    setLastSeenSeq(response.seq);
-  };
-
-  useEffect(() => {
-    setItems([]);
-    setLastSeenSeq(0);
-    syncItems(list.id, { lastSeenSeq: 0, changes: [] }).then(onSynced);
-  }, [list.id]);
-
-  const toggle = useToggleItem({ listId: list.id, lastSeenSeq, onSynced });
+  const toggle = useToggleItem({ applyChange });
 
   return (
     <Stack p={12}>
@@ -74,11 +51,7 @@ export function ListScreen({
           onListsChanged={onListsChanged}
         />
       </Group>
-      <AddItemInput
-        listId={list.id}
-        lastSeenSeq={lastSeenSeq}
-        onSynced={onSyncedPinned}
-      />
+      <AddItemInput applyChange={applyChange} />
       {sortedItems.length === 0 && (
         <Text c="dimmed">
           Список пуст. Начни печатать выше — появятся подсказки из твоих частых
@@ -101,9 +74,7 @@ export function ListScreen({
                   key={item.id}
                   item={item}
                   categories={categories}
-                  listId={list.id}
-                  lastSeenSeq={lastSeenSeq}
-                  onSynced={onSynced}
+                  applyChange={applyChange}
                   onClose={() => setExpandedItemId(null)}
                 />
               ) : null

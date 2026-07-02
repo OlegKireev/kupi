@@ -1,4 +1,4 @@
-import type { Category, Item, SyncResponse } from '@kupi/shared';
+import type { Category, Item, ItemChange } from '@kupi/shared';
 import {
   ActionIcon,
   Button,
@@ -13,25 +13,12 @@ import { useEditItem } from '../model/useEditItem';
 type Props = {
   item: Item;
   categories: Category[];
-  listId: string;
-  lastSeenSeq: number;
-  onSynced: (response: SyncResponse) => void;
+  applyChange: (change: ItemChange) => void;
   onClose: () => void;
 };
 
-export function ItemEditor({
-  item,
-  categories,
-  listId,
-  lastSeenSeq,
-  onSynced,
-  onClose,
-}: Props) {
-  const { setQuantity, setCategory, deleteItem } = useEditItem({
-    listId,
-    lastSeenSeq,
-    onSynced,
-  });
+export function ItemEditor({ item, categories, applyChange, onClose }: Props) {
+  const { setQuantity, setCategory, deleteItem } = useEditItem({ applyChange });
 
   return (
     <Stack component="li">

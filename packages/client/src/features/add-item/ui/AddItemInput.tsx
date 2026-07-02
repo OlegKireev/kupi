@@ -1,20 +1,14 @@
-import type { SyncResponse } from '@kupi/shared';
+import type { ItemChange } from '@kupi/shared';
 import { Autocomplete } from '@/shared/ui';
 import { useAddItem } from '../model/useAddItem';
 
 type Props = {
-  listId: string;
-  lastSeenSeq: number;
-  onSynced: (response: SyncResponse, pinItemId: string) => void;
+  applyChange: (change: ItemChange) => void;
 };
 
-export function AddItemInput({ listId, lastSeenSeq, onSynced }: Props) {
+export function AddItemInput({ applyChange }: Props) {
   const { text, suggestions, onTextChange, submitOnEnter, selectSuggestion } =
-    useAddItem({
-      listId,
-      lastSeenSeq,
-      onSynced,
-    });
+    useAddItem({ applyChange });
 
   return (
     <Autocomplete

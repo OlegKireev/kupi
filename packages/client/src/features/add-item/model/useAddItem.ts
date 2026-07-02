@@ -1,18 +1,13 @@
 import { useRef, useState } from 'react';
-
-import type { Suggestion, SyncResponse } from '@kupi/shared';
-
-import { syncItems } from '@/entities/item';
+import type { ItemChange, Suggestion } from '@kupi/shared';
 import { generateId } from '@/shared/lib/ids';
 import { getSuggestions } from '../api/suggestions-api';
 
 type Params = {
-  listId: string;
-  lastSeenSeq: number;
-  onSynced: (response: SyncResponse, pinItemId: string) => void;
+  applyChange: (change: ItemChange) => void;
 };
 
-export function useAddItem({ listId, lastSeenSeq, onSynced }: Params) {
+export function useAddItem({ applyChange }: Params) {
   const [text, setText] = useState('');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const latestQueryRef = useRef('');
@@ -32,27 +27,20 @@ export function useAddItem({ listId, lastSeenSeq, onSynced }: Params) {
     }
   };
 
-  const addItem = async (name: string): Promise<void> => {
+  const addItem = (name: string): void => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    const itemId = generateId();
-    const response = await syncItems(listId, {
-      lastSeenSeq,
-      changes: [
-        {
-          itemId,
-          clientOpId: generateId(),
-          op: 'upsert',
-          fields: { name: trimmed, quantity: 1, categoryId: null },
-        },
-      ],
+    applyChange({
+      itemId: generateId(),
+      clientOpId: generateId(),
+      op: 'upsert',
+      fields: { name: trimmed, quantity: 1, categoryId: null },
     });
-    onSynced(response, itemId);
     setText('');
     setSuggestions([]);
   };
 
-  const submit = (): Promise<void> => addItem(text);
+  const submit = (): void => addItem(text);
 
   const selectSuggestion = (name: string): void => {
     justSelectedRef.current = true;

@@ -1,24 +1,16 @@
-import type { Item, ItemChange, SyncResponse } from '@kupi/shared';
-import { syncItems } from '@/entities/item';
+import type { Item, ItemChange } from '@kupi/shared';
 import { generateId } from '@/shared/lib/ids';
 
 type Params = {
-  listId: string;
-  lastSeenSeq: number;
-  onSynced: (response: SyncResponse) => void;
+  applyChange: (change: ItemChange) => void;
 };
 
-export function useEditItem({ listId, lastSeenSeq, onSynced }: Params) {
-  const apply = async (change: ItemChange): Promise<void> => {
-    const response = await syncItems(listId, { lastSeenSeq, changes: [change] });
-    onSynced(response);
-  };
-
+export function useEditItem({ applyChange }: Params) {
   const setQuantity = (item: Item, quantity: number) =>
-    apply({ itemId: item.id, clientOpId: generateId(), op: 'upsert', fields: { quantity } });
+    applyChange({ itemId: item.id, clientOpId: generateId(), op: 'upsert', fields: { quantity } });
 
   const setCategory = (item: Item, categoryId: string) =>
-    apply({
+    applyChange({
       itemId: item.id,
       clientOpId: generateId(),
       op: 'upsert',
@@ -26,7 +18,7 @@ export function useEditItem({ listId, lastSeenSeq, onSynced }: Params) {
     });
 
   const deleteItem = (item: Item) =>
-    apply({ itemId: item.id, clientOpId: generateId(), op: 'delete', fields: {} });
+    applyChange({ itemId: item.id, clientOpId: generateId(), op: 'delete', fields: {} });
 
   return { setQuantity, setCategory, deleteItem };
 }
