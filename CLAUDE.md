@@ -193,15 +193,16 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   the receiving side of both `list-menu` share flows. `model/useListSwitcher.ts`
   (by analogy with `list-menu/model/useListMenu.ts`) owns all three modals'
   state; `model/code-kind.ts` classifies the typed code by length — 8 chars
-  is a list invite (`joinList` → `POST /lists/join`), 6 is a device link code
-  (`redeemLinkCode` → `POST /link`), anything else is rejected client-side
-  with no network call. Redeeming a device link code shows a warning modal
-  first (it replaces this device's account cookie — any lists it currently
-  has become unreachable from it, recovery isn't implemented) and, on
-  confirm, calls the new `onAccountLinked(bootstrap)` prop — piped down from
-  `app/App.tsx` the same way `onSwitchList`/`onListsChanged` are — which
-  replaces `lists`/`categories`/`activeListId` wholesale from the `Bootstrap`
-  the server already returns from `POST /link`, no second round-trip.
+  is a list invite (`joinList` → `POST /api/lists/join`), 6 is a device link
+  code (`redeemLinkCode` → `POST /api/link`), anything else is rejected
+  client-side with no network call. Redeeming a device link code shows a
+  warning modal first (it replaces this device's account cookie — any lists
+  it currently has become unreachable from it, recovery isn't implemented)
+  and, on confirm, calls the new `onAccountLinked(bootstrap)` prop — piped
+  down from `app/App.tsx` the same way `onSwitchList`/`onListsChanged` are —
+  which replaces `lists`/`categories`/`activeListId` wholesale from the
+  `Bootstrap` the server already returns from `POST /api/link`, no second
+  round-trip.
   `400 invalid_code` from either endpoint, and a client-side-rejected code,
   surface as an `@mantine/notifications` toast (new dependency — the first
   reusable error-toast pattern in the app, mounted once in `main.tsx`). It
