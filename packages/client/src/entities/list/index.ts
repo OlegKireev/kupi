@@ -6,5 +6,7 @@ export {
   deleteList,
   getLists,
   getMemberCount,
+  joinList,
+  redeemLinkCode,
   renameList,
 } from './api/list-api';

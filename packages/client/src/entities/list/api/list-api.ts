@@ -28,3 +28,11 @@ export function createInvite(id: string): Promise<{ code: string }> {
 export function getMemberCount(id: string): Promise<number> {
   return get<{ count: number }>(`/lists/${id}/members`).then((r) => r.count);
 }
+
+export function joinList(code: string): Promise<List> {
+  return post<List>('/lists/join', { code });
+}
+
+export function redeemLinkCode(code: string): Promise<Bootstrap> {
+  return post<Bootstrap>('/link', { code });
+}
