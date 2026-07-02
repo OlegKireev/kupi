@@ -9,9 +9,11 @@
     "dev:client": "pnpm --filter @kupi/client dev",
     "build": "pnpm --filter @kupi/client build",
     "test": "pnpm --filter @kupi/server test",
-    "lint": "oxlint .",
-    "format": "oxfmt .",
-    "typecheck": "pnpm -r exec tsc --noEmit"
+    "lint": "concurrently -n js,types,arch -c yellow,blue,magenta \"pnpm:lint:js\" \"pnpm:lint:types\" \"pnpm:lint:arch\"",
+    "lint:js": "pnpm -r lint:js",
+    "lint:types": "pnpm -r lint:types",
+    "lint:arch": "pnpm -r lint:arch",
+    "format": "oxfmt ."
   },
   "devDependencies": {
     "concurrently": "^9.2.3",

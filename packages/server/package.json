@@ -7,6 +7,8 @@
     "dev": "tsx watch src/index.ts",
     "pretest": "tsx scripts/generate-db-types.ts --verify",
     "test": "node --import tsx --test src/**/*.test.ts",
+    "lint:types": "tsc --noEmit",
+    "lint:js": "oxlint .",
     "db:generate-types": "tsx scripts/generate-db-types.ts",
     "db:verify-types": "tsx scripts/generate-db-types.ts --verify"
   },

@@ -11,11 +11,13 @@ pnpm workspace monorepo (Node >=22). Install with `pnpm install`.
 - `pnpm dev:client` — run `@kupi/client` via Vite (dev-proxies `/api` to the server on
   port 3000, so client and server share one origin in dev — no CORS needed)
 - `pnpm build` — build the client (`vite build`)
-- `pnpm --filter @kupi/client fsd-lint` — `steiger` FSD layer-boundary lint (see below)
 - `pnpm test` — run the server test suite (Node's built-in test runner via `tsx`)
-- `pnpm lint` — `oxlint .`
+- `pnpm lint` — all three lints in parallel via `concurrently`
+- `pnpm lint:js` / `lint:types` / `lint:arch` — `oxlint` / `tsc --noEmit` / `steiger`
+  FSD layer-boundary lint (client only, see below). Each package defines its own
+  `lint:*` scripts; the root just fans out via `pnpm -r`, so one package can be
+  checked with e.g. `pnpm --filter @kupi/client lint:types`
 - `pnpm format` — `oxfmt .`
-- `pnpm typecheck` — `tsc --noEmit` across all packages
 
 Run a single server test file directly (from `packages/server`), tests live next to the module they cover:
 `node --import tsx --test src/lists/routes.test.ts`
@@ -118,7 +120,7 @@ See `docs/backend-known-issues.md` for the current list of deliberately-deferred
 
 Feature-Sliced Design, all 6 layers (`app → pages → widgets → features →
 entities → shared`), import only "downward" through a slice's public API
-(`index.ts`) — enforced by `steiger` (`pnpm --filter @kupi/client fsd-lint`,
+(`index.ts`) — enforced by `steiger` (`pnpm --filter @kupi/client lint:arch`,
 config in `packages/client/steiger.config.ts`). State is plain `useState`,
 no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
 `app/App.tsx`, per-list `items`/`lastSeenSeq`/`expandedItemId` live in
