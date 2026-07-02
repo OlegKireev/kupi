@@ -56,6 +56,7 @@ export function ItemRow({
         <ActionIcon
           ml="auto"
           variant="gradient"
+          aria-label={`Редактировать ${item.name}`}
           onClick={onOpen}
         >
           <ListIcon />
