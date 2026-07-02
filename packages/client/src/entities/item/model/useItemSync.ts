@@ -19,12 +19,10 @@ export function useItemSync(listId: string) {
   const flushAgainRef = useRef(false);
 
   const update = (updater: (current: ListCache) => ListCache): void => {
-    setCache((current) => {
-      const next = updater(current);
-      cacheRef.current = next;
-      saveListCache(listId, next);
-      return next;
-    });
+    const next = updater(cacheRef.current);
+    cacheRef.current = next;
+    saveListCache(listId, next);
+    setCache(next);
   };
 
   const flush = async (): Promise<void> => {
