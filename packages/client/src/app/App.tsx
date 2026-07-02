@@ -70,6 +70,7 @@ export function App() {
 
   return (
     <ListScreenPage
+      key={activeList.id}
       list={activeList}
       lists={lists}
       categories={categories}

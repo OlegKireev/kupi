@@ -25,22 +25,30 @@ export function useItemSync(listId: string) {
   };
 
   const flush = async (): Promise<void> => {
-    if (flushingRef.current || cacheRef.current.queue.length === 0) return;
+    const pending = cacheRef.current.queue.filter((q) => !q.failed);
+    if (flushingRef.current || pending.length === 0) return;
     flushingRef.current = true;
-    const { lastSeenSeq, queue } = cacheRef.current;
+    const { lastSeenSeq } = cacheRef.current;
     try {
       const response = await syncItems(listId, {
         lastSeenSeq,
-        changes: queue.map((q) => q.change),
+        changes: pending.map((q) => q.change),
       });
       update((current) => ({
         items: mergeItems(current.items, response.items),
         lastSeenSeq: response.seq,
-        queue: [],
+        // между отправкой запроса и его ответом могли добавиться новые
+        // правки — убираем только то, что реально ушло в этой пачке,
+        // остальное (включая failed) остаётся в очереди.
+        queue: current.queue.filter((q) => q.failed || !pending.includes(q)),
       }));
     } catch (err) {
       if (err instanceof ApiError) {
-        update((current) => ({ ...current, queue: markAttempted(current.queue) }));
+        update((current) => {
+          const failed = current.queue.filter((q) => q.failed);
+          const attempted = markAttempted(current.queue.filter((q) => !q.failed));
+          return { ...current, queue: [...failed, ...attempted] };
+        });
       }
       // сетевая ошибка (не ApiError) — очередь не трогаем, ждём следующий `online`
     } finally {
