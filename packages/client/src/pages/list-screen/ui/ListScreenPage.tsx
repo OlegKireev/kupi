@@ -1,4 +1,4 @@
-import type { Category, List } from '@kupi/shared';
+import type { Bootstrap, Category, List } from '@kupi/shared';
 import { ListScreen } from '@/widgets/list-screen';
 
 type Props = {
@@ -7,6 +7,7 @@ type Props = {
   categories: Category[];
   onSwitchList: (id: string) => void;
   onListsChanged: (selectId?: string) => void;
+  onAccountLinked: (bootstrap: Bootstrap) => void;
 };
 
 export function ListScreenPage({
@@ -15,6 +16,7 @@ export function ListScreenPage({
   categories,
   onSwitchList,
   onListsChanged,
+  onAccountLinked,
 }: Props) {
   return (
     <ListScreen
@@ -23,6 +25,7 @@ export function ListScreenPage({
       categories={categories}
       onSwitchList={onSwitchList}
       onListsChanged={onListsChanged}
+      onAccountLinked={onAccountLinked}
     />
   );
 }

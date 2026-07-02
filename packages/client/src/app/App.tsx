@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Category, List } from '@kupi/shared';
+import type { Bootstrap, Category, List } from '@kupi/shared';
 import { createAccount, createList, getLists } from '@/entities/list';
 import { getCategories } from '@/entities/category';
 import { ListScreenPage } from '@/pages/list-screen';
@@ -65,6 +65,14 @@ export function App() {
     });
   };
 
+  // Редимпшн линк-кода меняет cookie этого устройства на другой аккаунт —
+  // сервер уже вернул полный bootstrap, второй round-trip не нужен.
+  const onAccountLinked = (bootstrap: Bootstrap): void => {
+    setLists(bootstrap.lists);
+    setActiveListId(bootstrap.lists[0]?.id ?? null);
+    setCategories(bootstrap.categories);
+  };
+
   const activeList = lists.find((l) => l.id === activeListId);
   if (!activeList) return null;
 
@@ -76,6 +84,7 @@ export function App() {
       categories={categories}
       onSwitchList={setActiveListId}
       onListsChanged={refreshLists}
+      onAccountLinked={onAccountLinked}
     />
   );
 }

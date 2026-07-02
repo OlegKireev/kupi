@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Category, List } from '@kupi/shared';
+import type { Bootstrap, Category, List } from '@kupi/shared';
 import { CategoryIcon } from '@/entities/category';
 import { ItemRow, useItemSync } from '@/entities/item';
 import { AddItemInput } from '@/features/add-item';
@@ -15,6 +15,7 @@ type Props = {
   categories: Category[];
   onSwitchList: (id: string) => void;
   onListsChanged: (selectId?: string) => void;
+  onAccountLinked: (bootstrap: Bootstrap) => void;
 };
 
 export function ListScreen({
@@ -23,6 +24,7 @@ export function ListScreen({
   categories,
   onSwitchList,
   onListsChanged,
+  onAccountLinked,
 }: Props) {
   const { items, pendingCount, failedCount, applyChange } = useItemSync(list.id);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
@@ -45,6 +47,7 @@ export function ListScreen({
           lists={lists}
           onSwitchList={onSwitchList}
           onListsChanged={onListsChanged}
+          onAccountLinked={onAccountLinked}
         />
         <ListMenu
           list={list}
