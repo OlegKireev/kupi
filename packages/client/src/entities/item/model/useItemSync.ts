@@ -16,6 +16,7 @@ export function useItemSync(listId: string) {
   const [cache, setCache] = useState<ListCache>(emptyCache);
   const cacheRef = useRef(cache);
   const flushingRef = useRef(false);
+  const flushAgainRef = useRef(false);
 
   const update = (updater: (current: ListCache) => ListCache): void => {
     setCache((current) => {
@@ -27,10 +28,17 @@ export function useItemSync(listId: string) {
   };
 
   const flush = async (): Promise<void> => {
-    const pending = cacheRef.current.queue.filter((q) => !q.failed);
-    if (flushingRef.current || pending.length === 0) {
+    if (flushingRef.current) {
+      // flush уже летит в сеть — не бросаем этот вызов, а просим текущий
+      // перезапуститься по завершении, иначе изменения, добавленные во
+      // время in-flight запроса, застревают в очереди навсегда.
+      flushAgainRef.current = true;
       return;
     }
+    // pending может быть пустым — flush всё равно должен уйти в
+    // сеть, он же единственный способ получить чужие изменения (delta pull
+    // по lastSeenSeq), не только отправить свои.
+    const pending = cacheRef.current.queue.filter((q) => !q.failed);
     flushingRef.current = true;
     const { lastSeenSeq } = cacheRef.current;
     try {
@@ -59,6 +67,10 @@ export function useItemSync(listId: string) {
       // сетевая ошибка (не ApiError) — очередь не трогаем, ждём следующий `online`
     } finally {
       flushingRef.current = false;
+      if (flushAgainRef.current) {
+        flushAgainRef.current = false;
+        flush();
+      }
     }
   };
 
@@ -66,7 +78,7 @@ export function useItemSync(listId: string) {
     const loaded = loadListCache(listId) ?? emptyCache();
     cacheRef.current = loaded;
     setCache(loaded);
-    void flush();
+    flush();
   }, [listId]);
 
   useEffect(() => {
@@ -81,7 +93,7 @@ export function useItemSync(listId: string) {
       queue: enqueue(current.queue, change),
     }));
     if (navigator.onLine) {
-      void flush();
+      flush();
     }
   };
 
