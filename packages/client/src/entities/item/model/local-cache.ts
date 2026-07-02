@@ -12,7 +12,9 @@ const key = (listId: string): string => `kupi:list:${listId}`;
 
 export function loadListCache(listId: string): ListCache | null {
   const raw = localStorage.getItem(key(listId));
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   try {
     return JSON.parse(raw) as ListCache;
   } catch {

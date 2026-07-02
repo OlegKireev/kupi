@@ -18,7 +18,9 @@ export function App() {
   const bootstrapped = useRef(false);
 
   useEffect(() => {
-    if (bootstrapped.current) return;
+    if (bootstrapped.current) {
+      return;
+    }
     bootstrapped.current = true;
     (async () => {
       try {
@@ -52,7 +54,9 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (lists.length > 0) saveBootstrapCache(lists, categories);
+    if (lists.length > 0) {
+      saveBootstrapCache(lists, categories);
+    }
   }, [lists, categories]);
 
   // Перезапрашивает GET /lists после мутации (создание/переименование/удаление
@@ -82,7 +86,9 @@ export function App() {
   };
 
   const activeList = lists.find((l) => l.id === activeListId);
-  if (!activeList) return null;
+  if (!activeList) {
+    return null;
+  }
 
   return (
     <ListScreenPage

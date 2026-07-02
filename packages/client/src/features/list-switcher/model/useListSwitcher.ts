@@ -26,7 +26,9 @@ export function useListSwitcher({ onListsChanged, onAccountLinked }: Params) {
 
   const submitNewList = async (): Promise<void> => {
     const name = newListName.trim();
-    if (!name) return;
+    if (!name) {
+      return;
+    }
     const created = await createList(name);
     setNewListName('');
     setNewListOpen(false);
@@ -73,7 +75,9 @@ export function useListSwitcher({ onListsChanged, onAccountLinked }: Params) {
 
   const confirmLinkDevice = async (): Promise<void> => {
     const code = pendingLinkCode;
-    if (!code) return;
+    if (!code) {
+      return;
+    }
     try {
       const bootstrap = await redeemLinkCode(code);
       setPendingLinkCode(null);

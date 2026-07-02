@@ -20,7 +20,9 @@ export function useAddItem({ applyChange }: Params) {
   const justSelectedRef = useRef(false);
 
   const onTextChange = async (value: string): Promise<void> => {
-    if (justSelectedRef.current) return;
+    if (justSelectedRef.current) {
+      return;
+    }
     setText(value);
     latestQueryRef.current = value;
     const results = value.trim() ? await getSuggestions(value) : [];
@@ -31,7 +33,9 @@ export function useAddItem({ applyChange }: Params) {
 
   const addItem = (name: string): void => {
     const trimmed = name.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      return;
+    }
     applyChange({
       itemId: generateId(),
       clientOpId: generateId(),

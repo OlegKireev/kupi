@@ -9,7 +9,9 @@ const KEY = 'kupi:bootstrap';
 
 export function loadBootstrapCache(): BootstrapCache | null {
   const raw = localStorage.getItem(KEY);
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   try {
     return JSON.parse(raw) as BootstrapCache;
   } catch {

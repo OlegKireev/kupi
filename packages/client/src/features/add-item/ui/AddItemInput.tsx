@@ -23,7 +23,9 @@ export function AddItemInput({ applyChange }: Props) {
       onChange={onTextChange}
       onOptionSubmit={selectSuggestion}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') submitOnEnter();
+        if (e.key === 'Enter') {
+          submitOnEnter();
+        }
       }}
     />
   );

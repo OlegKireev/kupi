@@ -28,7 +28,9 @@ export function useItemSync(listId: string) {
 
   const flush = async (): Promise<void> => {
     const pending = cacheRef.current.queue.filter((q) => !q.failed);
-    if (flushingRef.current || pending.length === 0) return;
+    if (flushingRef.current || pending.length === 0) {
+      return;
+    }
     flushingRef.current = true;
     const { lastSeenSeq } = cacheRef.current;
     try {
@@ -78,7 +80,9 @@ export function useItemSync(listId: string) {
       lastSeenSeq: current.lastSeenSeq,
       queue: enqueue(current.queue, change),
     }));
-    if (navigator.onLine) void flush();
+    if (navigator.onLine) {
+      void flush();
+    }
   };
 
   return {

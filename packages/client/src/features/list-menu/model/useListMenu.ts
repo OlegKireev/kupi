@@ -60,7 +60,9 @@ export function useListMenu({
 
   const submitRename = async (): Promise<void> => {
     const name = renameValue.trim();
-    if (!name) return;
+    if (!name) {
+      return;
+    }
     await renameList(list.id, name);
     setRenameOpen(false);
     onListsChanged();

@@ -5,5 +5,7 @@ export default defineConfig({
   plugins: ['typescript'],
   rules: {
     'no-async-endpoint-handlers': 'off',
+    curly: ['error', 'all'],
+    'no-implicit-coercion': 'error',
   },
 });
