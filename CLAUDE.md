@@ -11,7 +11,9 @@ pnpm workspace monorepo (Node >=22). Install with `pnpm install`.
 - `pnpm dev:client` — run `@kupi/client` via Vite (dev-proxies `/api` to the server on
   port 3000, so client and server share one origin in dev — no CORS needed)
 - `pnpm build` — build the client (`vite build`)
-- `pnpm test` — run the server test suite (Node's built-in test runner via `tsx`)
+- `pnpm test` — run every package's test suite (`pnpm -r --if-present test`):
+  the server suite (Node's built-in test runner via `tsx`) and the client
+  suite (`vitest run`, `packages/client`, jsdom environment)
 - `pnpm lint` — all three lints in parallel via `concurrently`
 - `pnpm lint:js` / `lint:types` / `lint:arch` — `oxlint` / `tsc --noEmit` / `steiger`
   FSD layer-boundary lint (client only, see below). Each package defines its own
@@ -28,7 +30,10 @@ from `db/schema.ts` via `kysely-codegen`, run after editing the DDL) and
 `db:verify-types` (same, fails without writing — wired into `pretest`, so
 `pnpm test` always catches a forgotten regeneration).
 
-There is no client test suite yet.
+`packages/client`'s vitest suite covers pure logic only (offline-queue
+retry policy, optimistic local patch, localStorage cache, sync-status text)
+— hooks and UI aren't covered, there's no React Testing Library in the
+project yet.
 
 ## Architecture
 
@@ -148,6 +153,25 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   cross-entity import, which `steiger`'s `fsd/no-cross-imports` forbids.
   Instead it takes a `categoryIcon: ReactNode` prop slot, filled in by
   `widgets/list-screen` (which sits above both entities).
+
+  `entities/item/model/useItemSync.ts` is the single owner of item state
+  and network sync for the active list — `widgets/list-screen` no longer
+  holds `items`/`lastSeenSeq` itself. It reads/writes a `localStorage` cache
+  (`kupi:list:<listId>` → `{ items, lastSeenSeq, queue }`) so a list opens
+  instantly from cache before any network round-trip (stale-while-revalidate:
+  a background flush reconciles it). `applyChange(change)` patches `items`
+  optimistically via `model/apply-change-locally.ts` (no server LWW — a
+  single device's own edits are always "latest") and pushes the change onto
+  a queue (`model/queue.ts`); a flush is one `syncItems` batch call, which
+  doubles as the diff-sync (the existing `mergeItems` reconciliation is
+  exactly the "compare cache to server" step, nothing extra needed). Flush
+  triggers: mount and the `online` window event. Retry policy: a network
+  error (not `ApiError`) leaves the queue untouched for the next `online`;
+  an `ApiError` (server rejected — e.g. the list was deleted while offline)
+  increments `attempts` on every queued change, marking it `failed` after 3
+  attempts (no auto-retry after that, no manual-retry UI yet). `clientOpId`
+  stays fixed across retries — safe because `sync`'s `applied_ops` dedup
+  (see `sync/` below) makes replays idempotent.
 - **`features/`** — `toggle-item` (flip `checked`), `edit-item` (quantity
   stepper, category chips, delete — bundled as one slice since it's one UX
   scene, the "expanded row"), `add-item` (name input with autocomplete
@@ -155,11 +179,13 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   backend's `item_frequency` table doesn't store category, so picking one
   just fills the text field, it doesn't set a category or create the item).
 - **`widgets/list-screen`** — composes everything above into the actual
-  screen: owns `items`/`lastSeenSeq`/`expandedItemId` state, does the initial
-  sync fetch on mount (`useEffect` deps deliberately `[list.id]` only, not
-  `onSynced` — mount-per-list is intentional, not a missed dependency), and
-  toggles each row between `ItemRow` and `features/edit-item`'s `ItemEditor`
-  by `expandedItemId`.
+  screen: owns only `expandedItemId` state now, `items` and sync state come
+  from `entities/item`'s `useItemSync(list.id)` — mount-per-list (`[list.id]`
+  as the hook's own dependency) is still intentional, not a missed
+  dependency. Toggles each row between `ItemRow` and `features/edit-item`'s
+  `ItemEditor` by `expandedItemId`. `toggle-item`/`add-item`/`edit-item`
+  build an `ItemChange` and call `useItemSync`'s `applyChange` directly —
+  none of them know about `syncItems`/the network anymore.
 - **`features/list-switcher`** — the list title + `CaretDown` in the header;
   tapping it opens a Mantine `Menu` listing the user's `lists` (switch is a
   synchronous prop callback, no refetch) plus "Новый список" at the bottom,
@@ -178,7 +204,11 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   список" is a single confirm-`Modal` and a single `deleteList` call
   regardless of role — `DELETE /api/lists/:id`'s owner-deletes-vs-member-leaves
   branching happens entirely server-side, the client never checks who owns
-  the list.
+  the list. The dropdown's first entry is a non-interactive `Menu.Label` showing sync
+  status — derived from `entities/item`'s `pendingCount`/`failedCount` (piped
+  down from `ListScreen`) and `shared/lib/useOnlineStatus.ts` by
+  `model/sync-status.ts`'s `getSyncStatusText` — the sync-status line
+  deferred in `2026-07-01-list-header-menu-design.md`.
 - **`pages/list-screen`** + **`app/App.tsx`** — bootstrap flow: `GET /api/lists` +
   `GET /api/categories` in parallel; a `401` (brand-new device, no `kupi_dt`
   cookie yet) falls back to `POST /api/accounts`, which creates the
@@ -191,17 +221,23 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   a shared `refreshLists(selectId?)` that just refetches `GET /api/lists` — no
   manual state patching, this isn't a hot path. If a delete/leave empties
   `lists`, `refreshLists` creates a fallback "Мои покупки" list, the same
-  pattern used for a brand-new account's first list.
+  pattern used for a brand-new account's first list. A network error (not `ApiError`) during the initial `GET /lists`+`GET
+  /categories` falls back to a `localStorage` cache (`kupi:bootstrap`,
+  written by `app/model/bootstrap-cache.ts` on every `lists`/`categories`
+  change) — covers reopening the app offline. No cache yet (device's very
+  first launch, offline) — unchanged empty-screen behavior, a known gap, not
+  a regression.
 
 Icons throughout the header/menu are `@phosphor-icons/react` components
 (`CaretDown`, `DotsThreeVertical`, `Copy`, `Trash`), not the text glyphs
 (`▾`/`⋮`) the original UI design spec assumed — a decision made once the
 header was actually implemented, see
 `docs/superpowers/specs/2026-07-01-list-header-menu-design.md`. That spec also
-documents two deliberately deferred pieces: a sync-status line in the menu
-("Синхронизировано только что" / "N в очереди") waits on a client-side
-offline-change queue that doesn't exist yet, and there's no screen to redeem
-an invite/link code from a shared link — only the generating side is built,
+documented the sync-status line as deferred pending a client-side
+offline-change queue — now implemented (see `features/list-menu` above,
+`docs/superpowers/specs/2026-07-02-offline-sync-queue-design.md`). The
+other deferred piece still stands: there's no screen to redeem an
+invite/link code from a shared link — only the generating side is built,
 accepting a code is a separate future task.
 
 `steiger.config.ts` disables two rules from `@feature-sliced/steiger-plugin`'s
