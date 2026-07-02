@@ -188,8 +188,23 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   none of them know about `syncItems`/the network anymore.
 - **`features/list-switcher`** — the list title + `CaretDown` in the header;
   tapping it opens a Mantine `Menu` listing the user's `lists` (switch is a
-  synchronous prop callback, no refetch) plus "Новый список" at the bottom,
-  which opens a small `Modal` with a `TextInput` calling `createList`. It
+  synchronous prop callback, no refetch) plus "Новый список", which opens a
+  small `Modal` with a `TextInput` calling `createList`, and "Ввести код",
+  the receiving side of both `list-menu` share flows. `model/useListSwitcher.ts`
+  (by analogy with `list-menu/model/useListMenu.ts`) owns all three modals'
+  state; `model/code-kind.ts` classifies the typed code by length — 8 chars
+  is a list invite (`joinList` → `POST /lists/join`), 6 is a device link code
+  (`redeemLinkCode` → `POST /link`), anything else is rejected client-side
+  with no network call. Redeeming a device link code shows a warning modal
+  first (it replaces this device's account cookie — any lists it currently
+  has become unreachable from it, recovery isn't implemented) and, on
+  confirm, calls the new `onAccountLinked(bootstrap)` prop — piped down from
+  `app/App.tsx` the same way `onSwitchList`/`onListsChanged` are — which
+  replaces `lists`/`categories`/`activeListId` wholesale from the `Bootstrap`
+  the server already returns from `POST /link`, no second round-trip.
+  `400 invalid_code` from either endpoint, and a client-side-rejected code,
+  surface as an `@mantine/notifications` toast (new dependency — the first
+  reusable error-toast pattern in the app, mounted once in `main.tsx`). It
   doesn't own the list of lists — `lists`/`activeListId` and the
   switch/refresh callbacks are all passed down from `app/App.tsx`.
 - **`features/list-menu`** — the "⋮" `ActionIcon`, one Mantine `Menu` bundling
@@ -236,9 +251,12 @@ header was actually implemented, see
 documented the sync-status line as deferred pending a client-side
 offline-change queue — now implemented (see `features/list-menu` above,
 `docs/superpowers/specs/2026-07-02-offline-sync-queue-design.md`). The
-other deferred piece still stands: there's no screen to redeem an
-invite/link code from a shared link — only the generating side is built,
-accepting a code is a separate future task.
+other deferred piece — redeeming an invite/link code — is now built (see
+`features/list-switcher` above, `docs/superpowers/specs/2026-07-02-redeem-code-design.md`).
+Deep links (`?code=...` auto-opening the modal) and QR codes for device
+linking are still out of scope — codes are copy-pasted by hand today — as is
+recovery for a device that gets orphaned by redeeming a link code onto a
+different account (`docs/backend-known-issues.md`).
 
 `steiger.config.ts` disables two rules from `@feature-sliced/steiger-plugin`'s
 `recommended` preset: `fsd/insignificant-slice` (every feature/widget here is
