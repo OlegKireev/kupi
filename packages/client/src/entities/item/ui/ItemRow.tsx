@@ -9,6 +9,7 @@ import {
   InputLabel,
   ListIcon,
   Stack,
+  Text,
 } from '@/shared/ui';
 
 import styles from './styles.module.css';
@@ -50,6 +51,7 @@ export function ItemRow({
         >
           {item.name}
         </InputLabel>
+        {item.quantity > 1 && <Text c="dimmed">({item.quantity})</Text>}
         {categoryIcon}
         <ActionIcon
           ml="auto"
