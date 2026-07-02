@@ -257,7 +257,10 @@ other deferred piece — redeeming an invite/link code — is now built (see
 Deep links (`?code=...` auto-opening the modal) and QR codes for device
 linking are still out of scope — codes are copy-pasted by hand today — as is
 recovery for a device that gets orphaned by redeeming a link code onto a
-different account (`docs/backend-known-issues.md`).
+different account (`docs/backend-known-issues.md`). See
+`docs/client-known-issues.md` for review findings from that feature
+(untested-in-browser flows, an `onAccountLinked` edge case) not worth fixing
+inline.
 
 `steiger.config.ts` disables two rules from `@feature-sliced/steiger-plugin`'s
 `recommended` preset: `fsd/insignificant-slice` (every feature/widget here is
