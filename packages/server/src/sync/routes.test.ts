@@ -301,6 +301,41 @@ test('re-adding a deleted item by name restores its last category', async () => 
   await app.close();
 });
 
+test('categoryId: null on an existing item clears its category', async () => {
+  const app = makeApp();
+  const u = await signup(app);
+  const listId = u.bootstrap.lists[0]!.id;
+
+  await sync(app, u.cookie, listId, {
+    lastSeenSeq: 0,
+    changes: [
+      {
+        itemId: 'i1',
+        clientOpId: 'c0',
+        op: 'upsert',
+        fields: { name: 'Хлеб', categoryId: 'bread' },
+      },
+    ],
+  });
+
+  const res = await sync(app, u.cookie, listId, {
+    lastSeenSeq: 0,
+    changes: [
+      {
+        itemId: 'i1',
+        clientOpId: 'c1',
+        op: 'upsert',
+        fields: { categoryId: null },
+      },
+    ],
+  });
+
+  const item = (res.json() as SyncResponse).items.find((i) => i.id === 'i1')!;
+  assert.equal(item.categoryId, null);
+
+  await app.close();
+});
+
 test('non-member cannot sync (404)', async () => {
   const app = makeApp();
   const owner = await signup(app);

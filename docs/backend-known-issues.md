@@ -14,7 +14,7 @@
 
 ## Осознанно отложено (`// ponytail` в коде + раздел Deferred плана)
 
-- **Очистка категории** (`categoryId: null`) трактуется как «без изменений» — «поле отсутствует» и «поле явно очищено» неразличимы в патче. Нужен sentinel, если станет фичей. — `sync/merge.ts`
+- ~~**Очистка категории** (`categoryId: null`)~~ (решено) — ~~трактуется как «без изменений»~~ — patch уже различал `undefined`/`null` для существующего item; недостающим звеном был только UI: у `ItemEditor` теперь есть чип «Без категории», вызывающий `setCategory(item, null)`. — `sync/merge.ts`, `features/edit-item`
 - **modulo-bias в `newCode`** — на 32-символьном алфавите (256 % 32 == 0) смещения фактически нет; комментарий пессимистичен. — `shared/ids.ts`
 - **Purge sweep** для `applied_ops` и tombstones — растут монотонно. При заведении покрыть и `item_frequency`.
 - **Token rotation / recovery**, QR для линковки, realtime-обновления, кастомные категории, name-dedup в suggestions, удаление списков.

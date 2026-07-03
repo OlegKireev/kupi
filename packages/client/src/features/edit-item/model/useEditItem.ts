@@ -15,7 +15,7 @@ export function useEditItem({ applyChange }: Params) {
       fields: { quantity },
     });
 
-  const setCategory = (item: Item, categoryId: string) =>
+  const setCategory = (item: Item, categoryId: string | null) =>
     applyChange({
       itemId: item.id,
       clientOpId: generateId(),

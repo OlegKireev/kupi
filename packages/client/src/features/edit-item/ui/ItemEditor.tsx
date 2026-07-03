@@ -67,6 +67,11 @@ export function ItemEditor({ item, categories, applyChange, onClose }: Props) {
               <Chip
                 key={c.id}
                 value={c.id}
+                onClick={(event) => {
+                  if (event.currentTarget.value === item.categoryId) {
+                    setCategory(item, null);
+                  }
+                }}
               >
                 {c.icon} {c.name}
               </Chip>

@@ -119,9 +119,11 @@ the tables it owns), plus a test file living next to the code it covers:
     change; items carry a `version` = the `seq` at last write. The response
     is a delta pull: all items with `version > lastSeenSeq`, tombstones
     included.
-  - `categoryId: null` in a patch is currently indistinguishable from "field
-    absent" (both mean "no change") — clearing a category isn't supported
-    yet, marked with a `// ponytail:` comment in `merge.ts`.
+  - Clearing a category: a patch distinguishes `categoryId` absent (`undefined`
+    — no change) from explicit `null` (clears the category) for an *existing*
+    item; for a brand-new item `null` means "not specified" and falls through
+    to the carry-over-by-name lookup below instead. `ItemEditor`'s category
+    chip group has a "Без категории" option wired to `categoryId: null`.
   - Category carries over on re-add: when inserting a brand-new item (new
     `itemId`, e.g. add-item always mints one) with no explicit `categoryId`,
     `merge.ts` looks up the most recent `categoryId` for a case-insensitive
