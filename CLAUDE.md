@@ -108,9 +108,12 @@ PRIMARY KEY` isn't implicitly `NOT NULL` the way Postgres's is, so every
   name normalization) and `test-helpers.ts` (`makeApp`/`signup`, used by every
   domain's tests).
 - **`auth/`** — anonymous accounts, no passwords. `auth.ts` resolves the
-  `kupi_dt` device-token cookie to `request.accountId` in an `onRequest` hook
-  and does sliding TTL renewal on every authenticated request; `PUBLIC` paths
-  (`/api/health`, `/api/accounts`, `/api/link`) skip auth. `repository.ts` owns the
+  `kupi_dt` device-token cookie to `request.accountId` in an `onRequest` hook;
+  `PUBLIC` paths (`/api/health`, `/api/accounts`, `/api/link`) skip auth. A
+  separate `onSend` hook does sliding TTL renewal, but only when
+  `req.accountId` is set and the response is 2xx — so a request the handler
+  itself rejects (e.g. `404` on a list the caller isn't a member of) doesn't
+  extend the cookie's lifetime. `repository.ts` owns the
   `devices` table.
 - **`accounts/`** — `POST /api/accounts` creates an account + first device + a
   default list in one transaction and sets the auth cookie. `bootstrap.ts`

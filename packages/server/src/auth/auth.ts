@@ -27,9 +27,11 @@ export function setAuthCookie(reply: FastifyReply, token: string): void {
 const PUBLIC = new Set(['/api/health', '/api/accounts', '/api/link']);
 
 /**
- * Регистрирует cookie-плагин и onRequest-хук для аутентификации.
- * Для защищённых роутов хук резолвит device-токен из cookie в request.accountId.
- * Проводит sliding renewal: продлевает TTL куки на каждом авторизованном запросе.
+ * Регистрирует cookie-плагин и хуки аутентификации.
+ * Для защищённых роутов onRequest резолвит device-токен из cookie в request.accountId.
+ * Проводит sliding renewal: продлевает TTL куки, но только на успешном (2xx)
+ * ответе — так TTL не продлевается на запросах, которые хендлер отклоняет
+ * (например 404 на чужой список).
  */
 export function registerAuth(app: FastifyInstance): void {
   app.register(cookie);
@@ -50,9 +52,14 @@ export function registerAuth(app: FastifyInstance): void {
 
     // Привязываем account_id к реквесту
     req.accountId = device.accountId;
+  });
 
-    // Sliding renewal: продлеваем TTL куки, значение то же
-    setAuthCookie(reply, token!);
+  app.addHook('onSend', async (req, reply, payload) => {
+    if (req.accountId && reply.statusCode >= 200 && reply.statusCode < 300) {
+      const token = req.cookies[COOKIE];
+      if (token) setAuthCookie(reply, token);
+    }
+    return payload;
   });
 }
 

@@ -32,12 +32,39 @@ test('valid device token authenticates and refreshes the cookie', async () => {
     headers: { cookie: `${COOKIE}=tok` },
   });
 
-  // /lists появится в Task 6; до него хук пропустит аутентификацию и вернёт 404 (не 401)
-  assert.notEqual(res.statusCode, 401);
+  assert.equal(res.statusCode, 200);
   const set = res.cookies.find((cookie) => cookie.name === COOKIE);
   assert.ok(set, 'ожидаем обновлённый Set-Cookie');
   assert.equal(set?.value, 'tok');
   assert.equal(set?.maxAge, 400 * 24 * 60 * 60);
+
+  await app.close();
+});
+
+test('cookie не продлевается на отклонённом запросе (404 на чужой список)', async () => {
+  const sqlite = new Database(':memory:');
+  const app = await buildApp(sqlite);
+
+  const now = Date.now();
+  sqlite
+    .prepare("INSERT INTO accounts (id, created_at) VALUES ('a1', ?)")
+    .run(now);
+  sqlite
+    .prepare(
+      "INSERT INTO devices (id, account_id, token, created_at) VALUES ('d1', 'a1', 'tok', ?)",
+    )
+    .run(now);
+
+  const res = await app.inject({
+    method: 'PATCH',
+    url: '/api/lists/does-not-exist',
+    headers: { cookie: `${COOKIE}=tok` },
+    payload: { name: 'x' },
+  });
+
+  assert.equal(res.statusCode, 404);
+  const set = res.cookies.find((cookie) => cookie.name === COOKIE);
+  assert.equal(set, undefined, 'на 404 куку продлевать не должны');
 
   await app.close();
 });
