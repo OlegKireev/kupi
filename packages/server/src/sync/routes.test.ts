@@ -159,6 +159,50 @@ test('replaying the same clientOpId is idempotent', async () => {
   await app.close();
 });
 
+test('the same clientOpId reused on a different list is applied, not deduped', async () => {
+  const app = makeApp();
+  const u = await signup(app);
+  const listA = u.bootstrap.lists[0]!.id;
+
+  const createRes = await app.inject({
+    method: 'POST',
+    url: '/api/lists',
+    headers: { cookie: u.cookie },
+    payload: { name: 'Второй список' },
+  });
+  const listB = (createRes.json() as { id: string }).id;
+
+  await sync(app, u.cookie, listA, {
+    lastSeenSeq: 0,
+    changes: [
+      {
+        itemId: 'i1',
+        clientOpId: 'shared-op-id',
+        op: 'upsert',
+        fields: { name: 'Сыр', quantity: 1 },
+      },
+    ],
+  });
+  const resB = await sync(app, u.cookie, listB, {
+    lastSeenSeq: 0,
+    changes: [
+      {
+        itemId: 'i2',
+        clientOpId: 'shared-op-id',
+        op: 'upsert',
+        fields: { name: 'Сыр', quantity: 1 },
+      },
+    ],
+  });
+
+  const itemsB = (resB.json() as SyncResponse).items.filter(
+    (i) => i.id === 'i2',
+  );
+  assert.equal(itemsB.length, 1, 'item should be created on list B too');
+
+  await app.close();
+});
+
 test('re-adding a deleted item by name restores its last category', async () => {
   const app = makeApp();
   const u = await signup(app);

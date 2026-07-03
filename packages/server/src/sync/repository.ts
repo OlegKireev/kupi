@@ -14,14 +14,15 @@ function rowToItem(row: Selectable<Items>): Item {
   };
 }
 
-/** Регистрирует применённую операцию; возвращает false, если clientOpId уже был применён. */
+/** Регистрирует применённую операцию; возвращает false, если clientOpId уже был применён в этом списке. */
 export async function insertAppliedOp(
   db: Db,
+  listId: string,
   clientOpId: string,
 ): Promise<boolean> {
   const result = await db
     .insertInto('appliedOps')
-    .values({ clientOpId })
+    .values({ listId, clientOpId })
     .onConflict((oc) => oc.doNothing())
     .executeTakeFirst();
   return Number(result.numInsertedOrUpdatedRows ?? 0) > 0;

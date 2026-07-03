@@ -52,7 +52,9 @@ CREATE TABLE IF NOT EXISTS items (
 );
 CREATE INDEX IF NOT EXISTS items_list_version ON items(list_id, version);
 CREATE TABLE IF NOT EXISTS applied_ops (
-  client_op_id TEXT PRIMARY KEY NOT NULL
+  list_id TEXT NOT NULL REFERENCES lists(id),
+  client_op_id TEXT NOT NULL,
+  PRIMARY KEY (list_id, client_op_id)
 );
 CREATE TABLE IF NOT EXISTS categories (
   id TEXT PRIMARY KEY NOT NULL,

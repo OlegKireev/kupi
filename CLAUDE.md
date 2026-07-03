@@ -101,10 +101,9 @@ the tables it owns), plus a test file living next to the code it covers:
 - **`sync/`** — clients push a batch of `ItemChange`s to `POST
 /api/lists/:id/sync` with `lastSeenSeq`, applied atomically in one Kysely
   transaction via `merge.ts`'s `applyChange`. Semantics:
-  - Idempotent via `applied_ops(client_op_id)` — replays of the same
-    `clientOpId` are no-ops. **Known gap**: this key is a global PK, not
-    scoped per-list; safe only because clients generate globally-unique UUIDs
-    (see `docs/backend-known-issues.md`).
+  - Idempotent via `applied_ops(list_id, client_op_id)` — replays of the same
+    `clientOpId` within a list are no-ops; the same `clientOpId` reused on a
+    different list is not deduped against it.
   - Remove-wins: a tombstoned item (`deleted=1`) is never resurrected by a
     non-delete change.
   - Column-wise LWW patch: an upsert builds a Kysely update object containing

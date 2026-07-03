@@ -16,6 +16,7 @@ export interface Accounts {
 
 export interface AppliedOps {
   clientOpId: string;
+  listId: string;
 }
 
 export interface Categories {

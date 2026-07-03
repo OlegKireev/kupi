@@ -19,7 +19,7 @@ import {
  * Применяет одно изменение к списку с семантикой LWW (last-write-wins).
  *
  * Гарантии:
- * - Идемпотентность: повторная доставка одного clientOpId игнорируется через applied_ops.
+ * - Идемпотентность: повторная доставка одного clientOpId в рамках списка игнорируется через applied_ops.
  * - Remove-wins: tombstone (deleted=1) не воскрешается non-delete изменением.
  * - Column-wise patch: апдейт затрагивает только присланные поля, так что
  *   конкурентные правки разных полей обе выживают.
@@ -36,7 +36,7 @@ export async function applyChange(
   change: ItemChange,
 ): Promise<void> {
   // Идемпотентность: повторная доставка одного clientOpId не применяется дважды
-  const isNewOp = await insertAppliedOp(db, change.clientOpId);
+  const isNewOp = await insertAppliedOp(db, listId, change.clientOpId);
   if (!isNewOp) return;
 
   const existingItem = await findItemById(db, change.itemId);
