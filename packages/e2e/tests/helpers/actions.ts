@@ -23,7 +23,10 @@ export async function setQuantity(page: Page, delta: number): Promise<void> {
   }
 }
 
-export async function pickCategory(page: Page, chipLabel: string): Promise<void> {
+export async function pickCategory(
+  page: Page,
+  chipLabel: string,
+): Promise<void> {
   await page.getByText(chipLabel, { exact: true }).click();
 }
 
@@ -36,7 +39,10 @@ export async function openListMenu(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Меню списка' }).click();
 }
 
-export async function openListSwitcher(page: Page, currentListName: string): Promise<void> {
+export async function openListSwitcher(
+  page: Page,
+  currentListName: string,
+): Promise<void> {
   await page.getByRole('button', { name: currentListName }).click();
 }
 
@@ -52,6 +58,8 @@ export async function shareList(owner: Page, guest: Page): Promise<void> {
 
   await openListSwitcher(guest, 'Мои покупки');
   await guest.getByRole('menuitem', { name: 'Ввести код' }).click();
-  await guest.getByPlaceholder('Код приглашения или устройства').fill(inviteCode);
+  await guest
+    .getByPlaceholder('Код приглашения или устройства')
+    .fill(inviteCode);
   await guest.getByRole('button', { name: 'Продолжить' }).click();
 }

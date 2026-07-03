@@ -9,7 +9,9 @@ import {
   toggleItem,
 } from './helpers/actions';
 
-test('a fresh device bootstraps an account with a default list', async ({ page }) => {
+test('a fresh device bootstraps an account with a default list', async ({
+  page,
+}) => {
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Мои покупки' })).toBeVisible();
 });
@@ -30,7 +32,9 @@ test('add (with autocomplete), check, edit quantity/category, and delete an item
   await toggleItem(page, 'Молоко');
   await expect(page.getByRole('checkbox', { name: 'Молоко' })).toBeChecked();
   await toggleItem(page, 'Молоко');
-  await expect(page.getByRole('checkbox', { name: 'Молоко' })).not.toBeChecked();
+  await expect(
+    page.getByRole('checkbox', { name: 'Молоко' }),
+  ).not.toBeChecked();
 
   await openEditor(page, 'Молоко');
   await setQuantity(page, 2); // 1 -> 3

@@ -1,9 +1,8 @@
 import Database from 'better-sqlite3';
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
-
 import { Kysely, SqliteDialect, sql } from 'kysely';
 import type { Migration } from 'kysely/migration';
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
 
 import { migrateToLatest } from '@/db/migrator';
 
@@ -62,8 +61,9 @@ test('re-running migrateToLatest with no new migrations is a no-op', async () =>
   await migrateToLatest(db, migrations);
   await migrateToLatest(db, migrations);
 
-  const { rows } = await sql`SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'widgets'`.execute(
-    db,
-  );
+  const { rows } =
+    await sql`SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'widgets'`.execute(
+      db,
+    );
   assert.equal(rows.length, 1);
 });

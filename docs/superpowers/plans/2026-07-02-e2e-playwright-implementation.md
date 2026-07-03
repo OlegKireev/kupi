@@ -31,6 +31,7 @@ edits above.
 ### Task 1: Make the server's SQLite path configurable via `DB_PATH`
 
 **Files:**
+
 - Modify: `packages/server/src/index.ts`
 
 - [ ] **Step 1: Read `DB_PATH` from the environment**
@@ -67,6 +68,7 @@ git commit -m "feat(server): make sqlite path configurable via DB_PATH"
 ### Task 2: Make the client's `/api` proxy target configurable via `VITE_API_PROXY_TARGET`
 
 **Files:**
+
 - Modify: `packages/client/vite.config.ts`
 
 - [ ] **Step 1: Read the proxy target from the environment**
@@ -120,6 +122,7 @@ git commit -m "feat(client): make the dev proxy target configurable via VITE_API
 ### Task 3: Add an `aria-label` to `ItemRow`'s edit-toggle button
 
 **Files:**
+
 - Modify: `packages/client/src/entities/item/ui/ItemRow.tsx`
 
 - [ ] **Step 1: Add the label**
@@ -127,13 +130,13 @@ git commit -m "feat(client): make the dev proxy target configurable via VITE_API
 `packages/client/src/entities/item/ui/ItemRow.tsx` currently has:
 
 ```tsx
-        <ActionIcon
-          ml="auto"
-          variant="gradient"
-          onClick={onOpen}
-        >
-          <ListIcon />
-        </ActionIcon>
+<ActionIcon
+  ml="auto"
+  variant="gradient"
+  onClick={onOpen}
+>
+  <ListIcon />
+</ActionIcon>
 ```
 
 This is the only icon-only interactive element in the app without an
@@ -141,14 +144,14 @@ accessible name (every other icon button already has one — see
 `ListMenu.tsx`'s `aria-label="Меню списка"` for the same pattern). Change to:
 
 ```tsx
-        <ActionIcon
-          ml="auto"
-          variant="gradient"
-          aria-label={`Редактировать ${item.name}`}
-          onClick={onOpen}
-        >
-          <ListIcon />
-        </ActionIcon>
+<ActionIcon
+  ml="auto"
+  variant="gradient"
+  aria-label={`Редактировать ${item.name}`}
+  onClick={onOpen}
+>
+  <ListIcon />
+</ActionIcon>
 ```
 
 - [ ] **Step 2: Verify nothing broke**
@@ -169,6 +172,7 @@ git commit -m "fix(client): add aria-label to the item row's edit-toggle button"
 ### Task 4: Scaffold the `@kupi/e2e` workspace
 
 **Files:**
+
 - Create: `packages/e2e/package.json`
 - Create: `packages/e2e/tsconfig.json`
 
@@ -230,6 +234,7 @@ git commit -m "chore(e2e): scaffold the @kupi/e2e Playwright workspace"
 ### Task 5: Playwright config, isolated tmp DB, and teardown
 
 **Files:**
+
 - Create: `packages/e2e/tests/tmp-db.ts`
 - Create: `packages/e2e/global-teardown.ts`
 - Create: `packages/e2e/playwright.config.ts`
@@ -346,6 +351,7 @@ git commit -m "feat(e2e): add playwright config with isolated ports and tmp db"
 ### Task 6: Shared interaction helpers
 
 **Files:**
+
 - Create: `packages/e2e/tests/helpers/actions.ts`
 - Delete: `packages/e2e/tests/smoke.spec.ts` (superseded by Task 7)
 
@@ -377,7 +383,10 @@ export async function setQuantity(page: Page, delta: number): Promise<void> {
   }
 }
 
-export async function pickCategory(page: Page, chipLabel: string): Promise<void> {
+export async function pickCategory(
+  page: Page,
+  chipLabel: string,
+): Promise<void> {
   await page.getByText(chipLabel, { exact: true }).click();
 }
 
@@ -390,7 +399,10 @@ export async function openListMenu(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Меню списка' }).click();
 }
 
-export async function openListSwitcher(page: Page, currentListName: string): Promise<void> {
+export async function openListSwitcher(
+  page: Page,
+  currentListName: string,
+): Promise<void> {
   await page.getByRole('button', { name: currentListName }).click();
 }
 ```
@@ -418,6 +430,7 @@ git commit -m "feat(e2e): add shared interaction helpers"
 ### Task 7: `list-crud.spec.ts` — bootstrap, add/autocomplete, check, edit, delete
 
 **Files:**
+
 - Create: `packages/e2e/tests/list-crud.spec.ts`
 
 - [ ] **Step 1: Write the spec**
@@ -434,12 +447,16 @@ import {
   toggleItem,
 } from './helpers/actions';
 
-test('a fresh device bootstraps an account with a default list', async ({ page }) => {
+test('a fresh device bootstraps an account with a default list', async ({
+  page,
+}) => {
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Мои покупки' })).toBeVisible();
 });
 
-test('add (with autocomplete), check, edit quantity/category, and delete an item', async ({ page }) => {
+test('add (with autocomplete), check, edit quantity/category, and delete an item', async ({
+  page,
+}) => {
   await page.goto('/');
 
   await addItem(page, 'Молоко');
@@ -453,7 +470,9 @@ test('add (with autocomplete), check, edit quantity/category, and delete an item
   await toggleItem(page, 'Молоко');
   await expect(page.getByRole('checkbox', { name: 'Молоко' })).toBeChecked();
   await toggleItem(page, 'Молоко');
-  await expect(page.getByRole('checkbox', { name: 'Молоко' })).not.toBeChecked();
+  await expect(
+    page.getByRole('checkbox', { name: 'Молоко' }),
+  ).not.toBeChecked();
 
   await openEditor(page, 'Молоко');
   await setQuantity(page, 2); // 1 -> 3
@@ -488,6 +507,7 @@ git commit -m "test(e2e): cover bootstrap and item CRUD"
 ### Task 8: `multi-list.spec.ts` — create, switch, rename, delete/leave, fallback list
 
 **Files:**
+
 - Create: `packages/e2e/tests/multi-list.spec.ts`
 
 - [ ] **Step 1: Write the spec**
@@ -497,7 +517,9 @@ import { expect, test } from '@playwright/test';
 
 import { openListMenu, openListSwitcher } from './helpers/actions';
 
-test('create a list, switch between lists, rename, then delete back to another existing list', async ({ page }) => {
+test('create a list, switch between lists, rename, then delete back to another existing list', async ({
+  page,
+}) => {
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Мои покупки' })).toBeVisible();
 
@@ -517,21 +539,27 @@ test('create a list, switch between lists, rename, then delete back to another e
 
   await openListMenu(page);
   await page.getByRole('menuitem', { name: 'Переименовать список' }).click();
-  const renameDialog = page.getByRole('dialog', { name: 'Переименовать список' });
+  const renameDialog = page.getByRole('dialog', {
+    name: 'Переименовать список',
+  });
   await renameDialog.getByRole('textbox').fill('Дача 2.0');
   await renameDialog.getByRole('button', { name: 'Сохранить' }).click();
   await expect(page.getByRole('button', { name: 'Дача 2.0' })).toBeVisible();
 
   await openListMenu(page);
   await page.getByRole('menuitem', { name: 'Удалить/покинуть список' }).click();
-  const deleteDialog = page.getByRole('dialog', { name: 'Удалить/покинуть список?' });
+  const deleteDialog = page.getByRole('dialog', {
+    name: 'Удалить/покинуть список?',
+  });
   await deleteDialog.getByRole('button', { name: 'Подтвердить' }).click();
 
   // "Дача 2.0" is gone, the untouched default list is still there
   await expect(page.getByRole('button', { name: 'Мои покупки' })).toBeVisible();
 });
 
-test('deleting the last remaining list falls back to a fresh default list', async ({ page }) => {
+test('deleting the last remaining list falls back to a fresh default list', async ({
+  page,
+}) => {
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Мои покупки' })).toBeVisible();
 
@@ -565,6 +593,7 @@ git commit -m "test(e2e): cover multi-list create/switch/rename/delete and fallb
 ### Task 9: `sharing.spec.ts` — invite code (valid, malformed, well-formed-but-unknown)
 
 **Files:**
+
 - Create: `packages/e2e/tests/sharing.spec.ts`
 
 - [ ] **Step 1: Write the spec**
@@ -574,7 +603,9 @@ import { expect, test } from '@playwright/test';
 
 import { addItem, openListMenu, openListSwitcher } from './helpers/actions';
 
-test('an invite code shares a list, including its existing items, with a second device', async ({ browser }) => {
+test('an invite code shares a list, including its existing items, with a second device', async ({
+  browser,
+}) => {
   const ownerContext = await browser.newContext();
   const owner = await ownerContext.newPage();
   await owner.goto('/');
@@ -593,7 +624,9 @@ test('an invite code shares a list, including its existing items, with a second 
   await guest.goto('/');
   await openListSwitcher(guest, 'Мои покупки');
   await guest.getByRole('menuitem', { name: 'Ввести код' }).click();
-  await guest.getByPlaceholder('Код приглашения или устройства').fill(inviteCode);
+  await guest
+    .getByPlaceholder('Код приглашения или устройства')
+    .fill(inviteCode);
   await guest.getByRole('button', { name: 'Продолжить' }).click();
 
   await expect(guest.getByRole('checkbox', { name: 'Хлеб' })).toBeVisible();
@@ -602,7 +635,9 @@ test('an invite code shares a list, including its existing items, with a second 
   await guestContext.close();
 });
 
-test('a malformed code is rejected client-side with no network round-trip', async ({ page }) => {
+test('a malformed code is rejected client-side with no network round-trip', async ({
+  page,
+}) => {
   await page.goto('/');
   await openListSwitcher(page, 'Мои покупки');
   await page.getByRole('menuitem', { name: 'Ввести код' }).click();
@@ -612,11 +647,15 @@ test('a malformed code is rejected client-side with no network round-trip', asyn
   await expect(page.getByText('Неверный код')).toBeVisible();
 });
 
-test('a well-formed but unissued invite code is rejected by the server with the same toast', async ({ page }) => {
+test('a well-formed but unissued invite code is rejected by the server with the same toast', async ({
+  page,
+}) => {
   await page.goto('/');
   await openListSwitcher(page, 'Мои покупки');
   await page.getByRole('menuitem', { name: 'Ввести код' }).click();
-  await page.getByPlaceholder('Код приглашения или устройства').fill('ZZZZZZZZ');
+  await page
+    .getByPlaceholder('Код приглашения или устройства')
+    .fill('ZZZZZZZZ');
   await page.getByRole('button', { name: 'Продолжить' }).click();
   await expect(page.getByText('Неверный код')).toBeVisible();
 });
@@ -639,6 +678,7 @@ git commit -m "test(e2e): cover list sharing via invite code"
 ### Task 10: `device-link.spec.ts` — link code with the account-swap warning
 
 **Files:**
+
 - Create: `packages/e2e/tests/device-link.spec.ts`
 
 - [ ] **Step 1: Write the spec**
@@ -648,14 +688,18 @@ import { expect, test } from '@playwright/test';
 
 import { addItem, openListMenu, openListSwitcher } from './helpers/actions';
 
-test('a link code warns before replacing the second device\'s account, then swaps it', async ({ browser }) => {
+test("a link code warns before replacing the second device's account, then swaps it", async ({
+  browser,
+}) => {
   const primaryContext = await browser.newContext();
   const primary = await primaryContext.newPage();
   await primary.goto('/');
   await addItem(primary, 'Сыр');
 
   await openListMenu(primary);
-  await primary.getByRole('menuitem', { name: 'Подключить устройство' }).click();
+  await primary
+    .getByRole('menuitem', { name: 'Подключить устройство' })
+    .click();
   const linkCode = await primary
     .getByRole('dialog', { name: 'Код подключения устройства' })
     .getByText(/^[A-Z0-9]{6}$/)
@@ -670,10 +714,14 @@ test('a link code warns before replacing the second device\'s account, then swap
 
   await openListSwitcher(secondary, 'Мои покупки');
   await secondary.getByRole('menuitem', { name: 'Ввести код' }).click();
-  await secondary.getByPlaceholder('Код приглашения или устройства').fill(linkCode);
+  await secondary
+    .getByPlaceholder('Код приглашения или устройства')
+    .fill(linkCode);
   await secondary.getByRole('button', { name: 'Продолжить' }).click();
 
-  const warningDialog = secondary.getByRole('dialog', { name: 'Подключить устройство?' });
+  const warningDialog = secondary.getByRole('dialog', {
+    name: 'Подключить устройство?',
+  });
   await expect(warningDialog).toBeVisible();
   await warningDialog.getByRole('button', { name: 'Подключить' }).click();
 
@@ -702,6 +750,7 @@ git commit -m "test(e2e): cover device linking via link code"
 ### Task 11: `offline-sync.spec.ts` — queue while offline, flush on reconnect
 
 **Files:**
+
 - Create: `packages/e2e/tests/offline-sync.spec.ts`
 
 - [ ] **Step 1: Write the spec**
@@ -711,7 +760,9 @@ import { expect, test } from '@playwright/test';
 
 import { addItem, toggleItem } from './helpers/actions';
 
-test('offline changes apply optimistically and flush to the server once back online', async ({ browser }) => {
+test('offline changes apply optimistically and flush to the server once back online', async ({
+  browser,
+}) => {
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto('/');
@@ -728,7 +779,9 @@ test('offline changes apply optimistically and flush to the server once back onl
   const otherPage = await otherContext.newPage();
   await otherPage.goto('/');
   // the toggle is still queued on the offline device, hasn't reached the server yet
-  await expect(otherPage.getByRole('checkbox', { name: 'Йогурт' })).not.toBeChecked();
+  await expect(
+    otherPage.getByRole('checkbox', { name: 'Йогурт' }),
+  ).not.toBeChecked();
 
   await context.setOffline(false); // fires the 'online' window event, which triggers a flush
 
@@ -764,6 +817,7 @@ git commit -m "test(e2e): cover the offline-sync queue and reconnect flush"
 ### Task 12: Wire up `pnpm test:e2e` and gitignore Playwright output
 
 **Files:**
+
 - Modify: `package.json` (root)
 - Modify: `.gitignore`
 
@@ -818,6 +872,7 @@ git commit -m "chore: wire up pnpm test:e2e, keep it out of pnpm test"
 ### Task 13: Document the new workspace in `CLAUDE.md`
 
 **Files:**
+
 - Modify: `CLAUDE.md`
 
 - [ ] **Step 1: Add a `packages/e2e` section**
@@ -831,7 +886,7 @@ add:
   server+client instances on dedicated ports 3100/5174 with a throwaway tmp
   SQLite file — separate from `pnpm test` so the fast unit suite stays fast.
   Requires a one-time `pnpm --filter @kupi/e2e exec playwright install
-  chromium` to fetch the browser binary.
+chromium` to fetch the browser binary.
 ```
 
 In `CLAUDE.md`'s `## Architecture` section, after the existing three-bullet

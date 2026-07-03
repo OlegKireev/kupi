@@ -24,7 +24,7 @@ pnpm workspace monorepo (Node >=22). Install with `pnpm install`.
   server+client instances on dedicated ports 3100/5174 with a throwaway tmp
   SQLite file — separate from `pnpm test` so the fast unit suite stays fast.
   Requires a one-time `pnpm --filter @kupi/e2e exec playwright install
-  chromium` to fetch the browser binary.
+chromium` to fetch the browser binary.
 
 Run a single server test file directly (from `packages/server`), tests live next to the module they cover:
 `node --import tsx --test src/lists/routes.test.ts`
@@ -72,11 +72,11 @@ the tables it owns), plus a test file living next to the code it covers:
   driver), registered in `db/migrations/index.ts`'s `migrations` record.
   `migrateToLatest(db)` runs whatever hasn't been applied yet, tracked in
   the `kysely_migration` table — this replaced a plain `CREATE TABLE IF NOT
-  EXISTS` DDL blob that could only ever create tables, never alter existing
+EXISTS` DDL blob that could only ever create tables, never alter existing
   ones, which is what caused a real incident: a column added to
   `applied_ops`/`items` in `schema.ts` never reached already-existing dev
   `kupi.db` files, so `sync` returned `SQLITE_ERROR: table applied_ops has
-  no column named list_id` until the stale file was deleted by hand.
+no column named list_id` until the stale file was deleted by hand.
   Migration `001-init` still uses `CREATE TABLE IF NOT EXISTS` (not plain
   `CREATE TABLE`) — every pre-migrator dev DB already has these tables from
   the old `schema.ts` DDL but no `kysely_migration` bookkeeping, so the
@@ -101,7 +101,7 @@ the tables it owns), plus a test file living next to the code it covers:
   `.prettierignore`) so its checked-in content stays byte-identical to what
   codegen produces — otherwise the formatter would permanently desync it
   from `--verify`. (Codegen also caught a real gap once: SQLite's `TEXT
-  PRIMARY KEY` isn't implicitly `NOT NULL` the way Postgres's is, so every
+PRIMARY KEY` isn't implicitly `NOT NULL` the way Postgres's is, so every
   single-column text PK in `db/migrations/001-init.ts` says `NOT NULL`
   explicitly.)
 - **`shared/`** — cross-domain utilities: `ids.ts` (id/token/code generation,
@@ -145,7 +145,7 @@ the tables it owns), plus a test file living next to the code it covers:
     is a delta pull: all items with `version > lastSeenSeq`, tombstones
     included.
   - Clearing a category: a patch distinguishes `categoryId` absent (`undefined`
-    — no change) from explicit `null` (clears the category) for an *existing*
+    — no change) from explicit `null` (clears the category) for an _existing_
     item; for a brand-new item `null` means "not specified" and falls through
     to the carry-over-by-name lookup below instead. `ItemEditor`'s category
     chip group has a "Без категории" option wired to `categoryId: null`.

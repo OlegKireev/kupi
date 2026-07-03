@@ -2,14 +2,18 @@ import { expect, test } from '@playwright/test';
 
 import { addItem, openListMenu, openListSwitcher } from './helpers/actions';
 
-test('a link code warns before replacing the second device\'s account, then swaps it', async ({ browser }) => {
+test("a link code warns before replacing the second device's account, then swaps it", async ({
+  browser,
+}) => {
   const primaryContext = await browser.newContext();
   const primary = await primaryContext.newPage();
   await primary.goto('/');
   await addItem(primary, 'Сыр');
 
   await openListMenu(primary);
-  await primary.getByRole('menuitem', { name: 'Подключить устройство' }).click();
+  await primary
+    .getByRole('menuitem', { name: 'Подключить устройство' })
+    .click();
   const linkCode = await primary
     .getByRole('dialog', { name: 'Код подключения устройства' })
     .getByText(/^[A-Z0-9]{6}$/)
@@ -24,10 +28,14 @@ test('a link code warns before replacing the second device\'s account, then swap
 
   await openListSwitcher(secondary, 'Мои покупки');
   await secondary.getByRole('menuitem', { name: 'Ввести код' }).click();
-  await secondary.getByPlaceholder('Код приглашения или устройства').fill(linkCode);
+  await secondary
+    .getByPlaceholder('Код приглашения или устройства')
+    .fill(linkCode);
   await secondary.getByRole('button', { name: 'Продолжить' }).click();
 
-  const warningDialog = secondary.getByRole('dialog', { name: 'Подключить устройство?' });
+  const warningDialog = secondary.getByRole('dialog', {
+    name: 'Подключить устройство?',
+  });
   await expect(warningDialog).toBeVisible();
   await warningDialog.getByRole('button', { name: 'Подключить' }).click();
 

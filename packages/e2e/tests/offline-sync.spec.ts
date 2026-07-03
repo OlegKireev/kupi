@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test';
 
 import { addItem, toggleItem } from './helpers/actions';
 
-test('offline changes apply optimistically and flush to the server once back online', async ({ browser }) => {
+test('offline changes apply optimistically and flush to the server once back online', async ({
+  browser,
+}) => {
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto('/');
@@ -19,11 +21,15 @@ test('offline changes apply optimistically and flush to the server once back onl
   // the not-yet-flushed toggle) into the "other" context and make it look like the
   // change already reached the server. A real second device only shares the cookie.
   const cookies = await context.cookies();
-  const otherContext = await browser.newContext({ storageState: { cookies, origins: [] } });
+  const otherContext = await browser.newContext({
+    storageState: { cookies, origins: [] },
+  });
   const otherPage = await otherContext.newPage();
   await otherPage.goto('/');
   // the toggle is still queued on the offline device, hasn't reached the server yet
-  await expect(otherPage.getByRole('checkbox', { name: 'Йогурт' })).not.toBeChecked();
+  await expect(
+    otherPage.getByRole('checkbox', { name: 'Йогурт' }),
+  ).not.toBeChecked();
 
   await context.setOffline(false); // fires the 'online' window event, which triggers a flush
 

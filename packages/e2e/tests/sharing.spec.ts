@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test';
 
 import { addItem, openListSwitcher, shareList } from './helpers/actions';
 
-test('an invite code shares a list, including its existing items, with a second device', async ({ browser }) => {
+test('an invite code shares a list, including its existing items, with a second device', async ({
+  browser,
+}) => {
   const ownerContext = await browser.newContext();
   const owner = await ownerContext.newPage();
   await owner.goto('/');
@@ -19,7 +21,9 @@ test('an invite code shares a list, including its existing items, with a second 
   await guestContext.close();
 });
 
-test('a malformed code is rejected client-side with no network round-trip', async ({ page }) => {
+test('a malformed code is rejected client-side with no network round-trip', async ({
+  page,
+}) => {
   await page.goto('/');
   await openListSwitcher(page, 'Мои покупки');
   await page.getByRole('menuitem', { name: 'Ввести код' }).click();
@@ -29,11 +33,15 @@ test('a malformed code is rejected client-side with no network round-trip', asyn
   await expect(page.getByText('Неверный код')).toBeVisible();
 });
 
-test('a well-formed but unissued invite code is rejected by the server with the same toast', async ({ page }) => {
+test('a well-formed but unissued invite code is rejected by the server with the same toast', async ({
+  page,
+}) => {
   await page.goto('/');
   await openListSwitcher(page, 'Мои покупки');
   await page.getByRole('menuitem', { name: 'Ввести код' }).click();
-  await page.getByPlaceholder('Код приглашения или устройства').fill('ZZZZZZZZ');
+  await page
+    .getByPlaceholder('Код приглашения или устройства')
+    .fill('ZZZZZZZZ');
   await page.getByRole('button', { name: 'Продолжить' }).click();
   await expect(page.getByText('Неверный код')).toBeVisible();
 });
