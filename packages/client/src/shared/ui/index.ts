@@ -17,6 +17,7 @@ export {
   UnstyledButton,
 } from '@mantine/core';
 export { notifications } from '@mantine/notifications';
+export { CodeShareModal } from './CodeShareModal';
 export {
   CaretDownIcon,
   CheckIcon,
