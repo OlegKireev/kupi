@@ -39,7 +39,7 @@ export async function applyChange(
   const isNewOp = await insertAppliedOp(db, listId, change.clientOpId);
   if (!isNewOp) return;
 
-  const existingItem = await findItemById(db, change.itemId);
+  const existingItem = await findItemById(db, listId, change.itemId);
 
   // Remove-wins: tombstone не воскрешаем правкой
   if (existingItem && existingItem.deleted && change.op !== 'delete') return;
@@ -77,7 +77,7 @@ export async function applyChange(
   }
 
   if (change.op === 'delete') {
-    await tombstoneItem(db, change.itemId, seq, now);
+    await tombstoneItem(db, listId, change.itemId, seq, now);
     return;
   }
 
@@ -88,5 +88,5 @@ export async function applyChange(
   if (fields.quantity !== undefined) patch.quantity = fields.quantity;
   if (fields.categoryId !== undefined) patch.categoryId = fields.categoryId;
   if (fields.checked !== undefined) patch.checked = fields.checked ? 1 : 0;
-  await patchItem(db, change.itemId, patch);
+  await patchItem(db, listId, change.itemId, patch);
 }

@@ -28,14 +28,16 @@ export async function insertAppliedOp(
   return Number(result.numInsertedOrUpdatedRows ?? 0) > 0;
 }
 
-/** Резолвит item по id (для проверки существования/tombstone-статуса). */
+/** Резолвит item по id в рамках списка (для проверки существования/tombstone-статуса). */
 export async function findItemById(
   db: Db,
+  listId: string,
   itemId: string,
 ): Promise<{ deleted: number } | undefined> {
   return db
     .selectFrom('items')
     .select('deleted')
+    .where('listId', '=', listId)
     .where('id', '=', itemId)
     .executeTakeFirst();
 }
@@ -69,6 +71,7 @@ export async function insertItem(
 /** Помечает item удалённым (tombstone), не воскрешаемым обычной правкой. */
 export async function tombstoneItem(
   db: Db,
+  listId: string,
   itemId: string,
   version: number,
   updatedAt: number,
@@ -76,6 +79,7 @@ export async function tombstoneItem(
   await db
     .updateTable('items')
     .set({ deleted: 1, version, updatedAt })
+    .where('listId', '=', listId)
     .where('id', '=', itemId)
     .execute();
 }
@@ -83,10 +87,16 @@ export async function tombstoneItem(
 /** Column-wise патч: обновляет только присланные поля. */
 export async function patchItem(
   db: Db,
+  listId: string,
   itemId: string,
   patch: Updateable<Items>,
 ): Promise<void> {
-  await db.updateTable('items').set(patch).where('id', '=', itemId).execute();
+  await db
+    .updateTable('items')
+    .set(patch)
+    .where('listId', '=', listId)
+    .where('id', '=', itemId)
+    .execute();
 }
 
 /** Все items списка с version > lastSeenSeq (дельта-pull, включая tombstones). */

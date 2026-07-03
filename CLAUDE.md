@@ -104,6 +104,10 @@ the tables it owns), plus a test file living next to the code it covers:
   - Idempotent via `applied_ops(list_id, client_op_id)` — replays of the same
     `clientOpId` within a list are no-ops; the same `clientOpId` reused on a
     different list is not deduped against it.
+  - `items` is keyed by `PRIMARY KEY (list_id, id)`, not `id` alone — a
+    colliding `itemId` on two different lists is two independent rows, not a
+    cross-list clobber. `findItemById`/`patchItem`/`tombstoneItem` all take
+    `listId` for this reason.
   - Remove-wins: a tombstoned item (`deleted=1`) is never resurrected by a
     non-delete change.
   - Column-wise LWW patch: an upsert builds a Kysely update object containing

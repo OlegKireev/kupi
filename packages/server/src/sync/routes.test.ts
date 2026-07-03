@@ -203,6 +203,54 @@ test('the same clientOpId reused on a different list is applied, not deduped', a
   await app.close();
 });
 
+test('the same itemId reused on a different list does not corrupt the original item', async () => {
+  const app = makeApp();
+  const u = await signup(app);
+  const listA = u.bootstrap.lists[0]!.id;
+
+  const createRes = await app.inject({
+    method: 'POST',
+    url: '/api/lists',
+    headers: { cookie: u.cookie },
+    payload: { name: 'Второй список' },
+  });
+  const listB = (createRes.json() as { id: string }).id;
+
+  await sync(app, u.cookie, listA, {
+    lastSeenSeq: 0,
+    changes: [
+      {
+        itemId: 'shared-item',
+        clientOpId: 'a1',
+        op: 'upsert',
+        fields: { name: 'Молоко' },
+      },
+    ],
+  });
+  await sync(app, u.cookie, listB, {
+    lastSeenSeq: 0,
+    changes: [
+      {
+        itemId: 'shared-item',
+        clientOpId: 'b1',
+        op: 'upsert',
+        fields: { name: 'Хлеб' },
+      },
+    ],
+  });
+
+  const checkA = await sync(app, u.cookie, listA, {
+    lastSeenSeq: 0,
+    changes: [],
+  });
+  const itemA = (checkA.json() as SyncResponse).items.find(
+    (i) => i.id === 'shared-item',
+  );
+  assert.equal(itemA?.name, 'Молоко', "list A's item must stay untouched");
+
+  await app.close();
+});
+
 test('re-adding a deleted item by name restores its last category', async () => {
   const app = makeApp();
   const u = await signup(app);

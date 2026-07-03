@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS list_invites (
   expires_at INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS items (
-  id TEXT PRIMARY KEY NOT NULL,
+  id TEXT NOT NULL,
   list_id TEXT NOT NULL REFERENCES lists(id),
   name TEXT NOT NULL DEFAULT '',
   quantity INTEGER NOT NULL DEFAULT 1,
@@ -48,7 +48,8 @@ CREATE TABLE IF NOT EXISTS items (
   checked INTEGER NOT NULL DEFAULT 0,
   version INTEGER NOT NULL,
   deleted INTEGER NOT NULL DEFAULT 0,
-  updated_at INTEGER NOT NULL
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (list_id, id)
 );
 CREATE INDEX IF NOT EXISTS items_list_version ON items(list_id, version);
 CREATE TABLE IF NOT EXISTS applied_ops (
