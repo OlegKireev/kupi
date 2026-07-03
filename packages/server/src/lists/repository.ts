@@ -131,9 +131,10 @@ export async function findListInviteByCode(
     .executeTakeFirst();
 }
 
-/** Удаляет список целиком (владелец): каскадом чистит items/list_invites/list_members/lists. */
+/** Удаляет список целиком (владелец): каскадом чистит items/applied_ops/list_invites/list_members/lists. */
 export async function deleteList(db: Db, listId: string): Promise<void> {
   await db.deleteFrom('items').where('listId', '=', listId).execute();
+  await db.deleteFrom('appliedOps').where('listId', '=', listId).execute();
   await db.deleteFrom('listInvites').where('listId', '=', listId).execute();
   await db.deleteFrom('listMembers').where('listId', '=', listId).execute();
   await db.deleteFrom('lists').where('id', '=', listId).execute();

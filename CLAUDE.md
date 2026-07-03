@@ -106,7 +106,16 @@ PRIMARY KEY` isn't implicitly `NOT NULL` the way Postgres's is, so every
   explicitly.)
 - **`shared/`** — cross-domain utilities: `ids.ts` (id/token/code generation,
   name normalization) and `test-helpers.ts` (`makeApp`/`signup`, used by every
-  domain's tests).
+  domain's tests). `makeApp`'s in-memory `Database` explicitly runs
+  `pragma('foreign_keys = ON')` — the same as `db/connection.ts`'s
+  `openSqlite` used by the real server — so a broken FK reference (e.g. a
+  domain forgetting to delete a child row before its parent) fails a unit
+  test instead of only surfacing against the real server/e2e. This caught a
+  real bug: `lists/repository.ts`'s `deleteList` never cleared `applied_ops`
+  before deleting the `lists` row, so deleting a list that had ever been
+  synced through `POST /sync` threw `SQLITE_CONSTRAINT_FOREIGNKEY` — invisible
+  under the old FK-less test DB, visible (intermittently, depending on
+  `findListsForAccount`'s `createdAt` sort tie-break) in e2e.
 - **`auth/`** — anonymous accounts, no passwords. `auth.ts` resolves the
   `kupi_dt` device-token cookie to `request.accountId` in an `onRequest` hook;
   `PUBLIC` paths (`/api/health`, `/api/accounts`, `/api/link`) skip auth. A

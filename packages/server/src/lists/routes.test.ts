@@ -144,6 +144,39 @@ test('owner deletes list — gone for owner and all members', async () => {
   await app.close();
 });
 
+test('owner deletes a list that already has synced items (applied_ops FK)', async () => {
+  const app = await makeApp();
+  const owner = await signup(app);
+  const listId = owner.bootstrap.lists[0]!.id;
+
+  const syncRes = await app.inject({
+    method: 'POST',
+    url: `/api/lists/${listId}/sync`,
+    headers: { cookie: owner.cookie },
+    payload: {
+      lastSeenSeq: 0,
+      changes: [
+        {
+          clientOpId: 'op-1',
+          itemId: 'item-1',
+          op: 'upsert',
+          fields: { name: 'Сыр' },
+        },
+      ],
+    },
+  });
+  assert.equal(syncRes.statusCode, 200);
+
+  const deleteRes = await app.inject({
+    method: 'DELETE',
+    url: `/api/lists/${listId}`,
+    headers: { cookie: owner.cookie },
+  });
+  assert.equal(deleteRes.statusCode, 204);
+
+  await app.close();
+});
+
 test('member leaves list — list still exists for owner', async () => {
   const app = await makeApp();
   const owner = await signup(app);

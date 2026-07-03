@@ -9,9 +9,13 @@ import { COOKIE } from '@/auth/auth';
 /**
  * Создаёт новый Fastify app с in-memory БД.
  * Удобно для тестов — каждый тест получает изолированное состояние.
+ * foreign_keys включён явно — иначе тесты не ловят нарушения FK, которые
+ * реальный сервер (db/connection.ts's openSqlite) enforce-ит всегда.
  */
 export function makeApp(): Promise<FastifyInstance> {
-  return buildApp(new Database(':memory:'));
+  const sqlite = new Database(':memory:');
+  sqlite.pragma('foreign_keys = ON');
+  return buildApp(sqlite);
 }
 
 /**
