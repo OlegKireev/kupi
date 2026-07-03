@@ -41,15 +41,17 @@ QR в data-URL), `@kupi/shared` (типы `Bootstrap`/`List`).
   `packages/client/vitest.config.ts`) по проектной политике (`CLAUDE.md`)
   покрывает только чистую логику, без React Testing Library. В этой задаче
   единственная такая логика — `parseDeepLink()`.
-- **Известный пре-существующий разрыв, не трогаем:** e2e-хелперы
-  (`packages/e2e/tests/helpers/actions.ts`'s `shareList`,
-  `packages/e2e/tests/sharing.spec.ts`, `device-link.spec.ts`) используют
-  селекторы старого меню (`'Меню списка'`, `menuitem` с именем `'Ввести
-код'`), которые не пережили редизайн шапки
-  (`docs/superpowers/specs/2026-07-03-list-header-menu-redesign-design.md`) —
-  `pnpm test:e2e` уже не проходит независимо от этой задачи. Не пытаться
-  чинить это здесь — вне скоупа, полагаемся на vitest + ручную QA (Task 7),
-  как и оба предыдущих спека по шерингу.
+- e2e-хелперы (`packages/e2e/tests/helpers/actions.ts`'s `shareList`,
+  `openAccountMenu`, и `sharing.spec.ts`/`device-link.spec.ts`) на момент
+  написания этого плана уже переписаны под текущее меню (коммит
+  `0b00e35`, «test(e2e): rewrite for new menus») — `pnpm test:e2e` проходит.
+  Task 7 ниже добавляет к ним ещё два теста на диплинк-флоу, используя те же
+  паттерны (`browser.newContext()` на «второе устройство», чтение кода из
+  `dialog`'а по regex). `shareList` читает код через
+  `getByRole('dialog', { name: 'Код приглашения' }).getByText(/^[A-Z0-9]{8}$/)`
+  — после Task 3 код всё ещё рендерится тем же `<Text>` внутри
+  `CodeShareModal`, так что этот селектор продолжит работать без изменений;
+  QR-картинка и кнопка «Поделиться» не совпадают с regex и не мешают.
 
 ## Карта файлов
 
@@ -67,6 +69,7 @@ QR в data-URL), `@kupi/shared` (типы `Bootstrap`/`List`).
 | `packages/client/src/app/App.tsx` | Разбор `window.location.search` один раз при старте, состояние `deepLink`, проброс вниз |
 | `packages/client/src/pages/list-screen/ui/ListScreenPage.tsx` | Транзитный проброс новых пропов |
 | `packages/client/src/widgets/list-screen/ui/ListScreen.tsx` | Транзитный проброс + разводка `initialListCode`/`initialDeviceCode` по `ListSwitcher`/`AccountMenu` |
+| `packages/e2e/tests/deep-link-sharing.spec.ts` | **новый.** Playwright-тесты на оба диплинк-флоу |
 
 ---
 
@@ -1429,14 +1432,138 @@ git commit -m "feat(client): parse deep link on boot and open matching modal"
 
 ---
 
-### Task 7: Ручная браузерная QA
+### Task 7: E2E-тесты диплинк-флоу
 
-Нет автоматизированного покрытия для UI/network-путей этой фичи (проектная
-политика: клиентский vitest — только чистая логика; e2e для шеринга уже
-сломан независимо от этой задачи, см. «Известный контекст» выше). Все
-сценарии проверяются вручную, аналогично Task 8 плана `redeem-code`.
+`pnpm test:e2e` уже рабочий (см. «Известный контекст» выше) и уже покрывает
+ручной ввод обоих кодов (`sharing.spec.ts`, `device-link.spec.ts`). Этот
+таск добавляет два теста на сам диплинк — переход по `?listCode=`/
+`?deviceCode=` вместо похода в меню и вставки кода вручную. Паттерн —
+`browser.newContext()` для «второго устройства», как в уже существующих
+тестах.
 
-**Files:** нет (только запуск и ручная проверка).
+**Files:**
+- Create: `packages/e2e/tests/deep-link-sharing.spec.ts`
+
+- [ ] **Step 1: Написать тесты**
+
+Создать `packages/e2e/tests/deep-link-sharing.spec.ts`:
+
+```ts
+import { expect, test } from '@playwright/test';
+
+import { addItem, openAccountMenu, openListSwitcher } from './helpers/actions';
+
+test('opening a list invite link on a second device auto-opens the join dialog, pre-filled', async ({
+  browser,
+}) => {
+  const ownerContext = await browser.newContext();
+  const owner = await ownerContext.newPage();
+  await owner.goto('/');
+  await addItem(owner, 'Хлеб');
+
+  await openListSwitcher(owner, 'Мои покупки');
+  await owner.getByRole('menuitem', { name: 'Пригласить в список' }).click();
+  const inviteDialog = owner.getByRole('dialog', { name: 'Код приглашения' });
+  await expect(
+    inviteDialog.getByRole('img', { name: 'QR-код' }),
+  ).toBeVisible();
+  const inviteCode = await inviteDialog
+    .getByText(/^[A-Z0-9]{8}$/)
+    .innerText();
+  await owner.keyboard.press('Escape');
+
+  const guestContext = await browser.newContext();
+  const guest = await guestContext.newPage();
+  await guest.goto(`/?listCode=${inviteCode}`);
+
+  const joinDialog = guest.getByRole('dialog', {
+    name: 'Присоединиться по коду списка',
+  });
+  await expect(joinDialog).toBeVisible();
+  await expect(guest.getByPlaceholder('Код приглашения')).toHaveValue(
+    inviteCode,
+  );
+  await joinDialog.getByRole('button', { name: 'Продолжить' }).click();
+
+  await expect(guest.getByRole('checkbox', { name: 'Хлеб' })).toBeVisible();
+
+  // диплинк-параметр сбрасывается из URL при обработке — reload не должен
+  // открыть модалку повторно
+  await guest.reload();
+  await expect(
+    guest.getByRole('dialog', { name: 'Присоединиться по коду списка' }),
+  ).toBeHidden();
+
+  await ownerContext.close();
+  await guestContext.close();
+});
+
+test('opening a device link on a fresh browser skips straight to the warning dialog', async ({
+  browser,
+}) => {
+  const primaryContext = await browser.newContext();
+  const primary = await primaryContext.newPage();
+  await primary.goto('/');
+  await addItem(primary, 'Сыр');
+
+  await openAccountMenu(primary);
+  await primary
+    .getByRole('menuitem', { name: 'Подключить это устройство' })
+    .click();
+  const linkCode = await primary
+    .getByRole('dialog', { name: 'Код подключения устройства' })
+    .getByText(/^[A-Z0-9]{6}$/)
+    .innerText();
+
+  const secondaryContext = await browser.newContext();
+  const secondary = await secondaryContext.newPage();
+  await secondary.goto(`/?deviceCode=${linkCode}`);
+
+  // диплинк пропускает шаг ручного ввода — сразу предупреждающая модалка,
+  // без промежуточного «Ввести код устройства»
+  const warningDialog = secondary.getByRole('dialog', {
+    name: 'Подключить устройство?',
+  });
+  await expect(warningDialog).toBeVisible();
+  await warningDialog.getByRole('button', { name: 'Подключить' }).click();
+
+  await expect(secondary.getByRole('checkbox', { name: 'Сыр' })).toBeVisible();
+
+  await primaryContext.close();
+  await secondaryContext.close();
+});
+```
+
+- [ ] **Step 2: Установить браузер Playwright, если ещё не установлен**
+
+Run: `pnpm --filter @kupi/e2e exec playwright install chromium`
+Expected: без ошибок (может быть no-op, если уже установлен раньше)
+
+- [ ] **Step 3: Запустить e2e-suite**
+
+Run: `pnpm test:e2e`
+Expected: PASS — все тесты, включая два новых из
+`deep-link-sharing.spec.ts` и все ранее существующие
+(`sharing.spec.ts`, `device-link.spec.ts`, `sharing-sync.spec.ts`,
+`multi-list.spec.ts`, и прочие в `packages/e2e/tests/`).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add packages/e2e/tests/deep-link-sharing.spec.ts
+git commit -m "test(e2e): cover list/device deep-link auto-open flows"
+```
+
+---
+
+### Task 8: Ручная проверка кнопки «Поделиться»
+
+Единственное, что e2e не проверяет: `navigator.share` в headless Chromium
+(Playwright) недоступен так же, как и в большинстве desktop-браузеров —
+автоматическая проверка присутствия/поведения кнопки «Поделиться» ничего не
+скажет о реальном мобильном сценарии. Короткая ручная проверка, без кода.
+
+**Files:** нет.
 
 - [ ] **Step 1: Поднять дев-сервер**
 
@@ -1444,64 +1571,21 @@ git commit -m "feat(client): parse deep link on boot and open matching modal"
 pnpm dev
 ```
 
-Дождаться, что клиент поднялся на `http://localhost:5173` (проксирует
-`/api` на сервер порт 3000).
+- [ ] **Step 2: Проверить на мобильном окружении (если доступно)**
 
-- [ ] **Step 2: Проверить генерацию QR + «Копировать» — инвайт в список**
+Открыть `http://<адрес-машины>:5173` с телефона в той же сети (или через
+devtools' mobile emulation с поддержкой Web Share API, если такое
+окружение есть под рукой) → «Пригласить в список» → убедиться, что рядом с
+«Копировать» появилась кнопка «Поделиться», и тап по ней открывает
+системный share sheet. Если мобильного окружения нет под рукой — пропустить
+этот шаг, отметить как непроверенное (известное ограничение окружения, не
+блокер, поведение уже покрыто условным рендерингом `typeof
+navigator.share === 'function'` в `CodeShareModal`).
 
-1. Открыть `http://localhost:5173` в обычном окне браузера.
-2. Тап по заголовку списка → «Пригласить в список».
-3. Убедиться: модалка показывает QR-картинку сверху, код текстом снизу,
-   кнопку «Копировать».
-4. Нажать «Копировать», вставить буфер обмена куда-нибудь (например, в
-   адресную строку новой вкладки) — убедиться, что скопирована именно
-   ссылка вида `http://localhost:5173/?listCode=XXXXXXXX`, а не голый код.
+- [ ] **Step 3: Погасить дев-сервер**
 
-- [ ] **Step 3: Проверить приём диплинка — присоединение к списку**
-
-1. Скопировать ссылку из Step 2.
-2. Открыть её в окне инкогнито (эмулирует «второе устройство» — отдельные
-   cookies).
-3. Убедиться: сразу после загрузки открывается модалка «Присоединиться по
-   коду списка» с уже заполненным полем кода.
-4. Нажать «Продолжить».
-5. Убедиться: список из Step 2 появился в свитчере списков этого окна, а
-   товары (если добавляли) синхронизировались.
-6. Обновить страницу (F5) в этом же окне инкогнито — убедиться, что модалка
-   присоединения повторно **не** открывается (URL уже сброшен на `/`).
-
-- [ ] **Step 4: Проверить генерацию QR + приём диплинка — линковка устройства**
-
-1. В обычном окне (из Step 2) открыть меню аккаунта (иконка пользователя) →
-   «Подключить это устройство».
-2. Убедиться: QR + код + «Копировать», как и для инвайта.
-3. Скопировать ссылку (`?deviceCode=...`), открыть в **новом** окне
-   инкогнито (не том же, что в Step 3 — нужен чистый cookie).
-4. Убедиться: сразу открывается предупреждающая модалка «Это заменит
-   аккаунт этого устройства...», без промежуточного шага ввода кода.
-5. Нажать «Подключить».
-6. Убедиться: списки в этом окне заменились на списки исходного аккаунта.
-
-- [ ] **Step 5: Проверить кнопку «Поделиться» (если доступно окружение)**
-
-В desktop Chrome/Firefox `navigator.share` обычно недоступен — кнопка
-«Поделиться» не должна рендериться вовсе (только «Копировать»). Если под
-рукой есть мобильный браузер или devtools с мобильной эмуляцией,
-поддерживающей Web Share API, — проверить, что кнопка появляется и вызывает
-системный share sheet. Если недоступно — пропустить этот пункт, отметить в
-результатах QA как непроверенное (известное ограничение окружения, не блокер).
-
-- [ ] **Step 6: Погасить дев-сервер**
-
-Остановить процесс `pnpm dev` (Ctrl+C или `kill` PID) — по общему правилу
-не оставлять висящие процессы после задачи.
-
-- [ ] **Step 7: Commit (если по ходу QA что-то правилось)**
-
-Если Step 2–5 не потребовали правок — коммитить нечего, Task 7 завершается
-без коммита. Если QA нашла баг и потребовала фикс — исправить,
-перепройти соответствующий шаг, закоммитить фикс отдельным коммитом с
-понятным сообщением (`fix(client): ...`).
+Остановить процесс `pnpm dev` (Ctrl+C или `kill` PID) — не оставлять
+висящие процессы после задачи.
 
 ---
 
@@ -1512,7 +1596,7 @@ pnpm --filter @kupi/client lint:types
 pnpm --filter @kupi/client lint:js
 pnpm --filter @kupi/client lint:arch
 pnpm --filter @kupi/client test
+pnpm test:e2e
 ```
 
-Все четыре команды должны пройти без ошибок. `pnpm test:e2e` **не** входит
-в критерий готовности этой задачи — см. «Известный контекст» выше.
+Все пять команд должны пройти без ошибок.
