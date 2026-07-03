@@ -20,6 +20,7 @@ import {
   UsersFourIcon,
 } from '@/shared/ui';
 import { useListSwitcher } from '../model/useListSwitcher';
+import styles from './styles.module.css';
 
 type Props = {
   list: List;
@@ -73,7 +74,7 @@ export function ListSwitcher({
     <>
       <Menu onOpen={loadMemberCount}>
         <Menu.Target>
-          <UnstyledButton>
+          <UnstyledButton className={styles.menuTrigger}>
             <Group
               gap={8}
               wrap="nowrap"
@@ -84,7 +85,10 @@ export function ListSwitcher({
               >
                 {list.name}
               </Title>
-              <CaretDownIcon size={20} />
+              <CaretDownIcon
+                size={20}
+                className={styles.caretIcon}
+              />
             </Group>
           </UnstyledButton>
         </Menu.Target>

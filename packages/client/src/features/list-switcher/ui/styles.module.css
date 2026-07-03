@@ -1,0 +1,7 @@
+.caretIcon {
+  transition: transform 100ms ease;
+}
+
+.menuTrigger[data-expanded] .caretIcon {
+  transform: rotate(180deg);
+}
