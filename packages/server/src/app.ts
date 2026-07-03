@@ -9,6 +9,7 @@ import { accountRoutes } from '@/accounts/routes';
 import { registerAuth } from '@/auth/auth';
 import { createDb, type Db } from '@/db/connection';
 import { migrateToLatest } from '@/db/migrator';
+import { purgeStaleData } from '@/db/purge';
 import { seedCategories } from '@/db/schema';
 import { linkRoutes } from '@/link/routes';
 import { listRoutes } from '@/lists/routes';
@@ -27,6 +28,11 @@ export async function buildApp(
   // категории — идемпотентно, безопасно на каждом старте
   await migrateToLatest(db);
   seedCategories(sqlite);
+
+  // Чистим монотонно растущие таблицы (applied_ops, старые tombstones) —
+  // дёшево на пустой/маленькой БД, безопасно на каждом старте. Периодический
+  // повтор для долгоживущего процесса — в index.ts.
+  await purgeStaleData(db);
 
   // Устанавливаем zod-компиляторы для валидации и сериализации
   app.setValidatorCompiler(validatorCompiler);

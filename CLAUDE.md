@@ -164,7 +164,22 @@ private `rowToItem`, coercing SQLite's `0`/`1` to `boolean`) — every other
 domain's Kysely `Selectable<Table>` result already matches its `@kupi/shared`
 zod type once `CamelCasePlugin` handles the casing.
 
-See `docs/backend-known-issues.md` for the current list of deliberately-deferred backend issues (idempotency key scope, cookie renewal on rejected requests, category-clear sentinel, purge sweeps, token rotation, etc.) — check it before "fixing" something that looks like a bug but was a scoped MVP tradeoff.
+`db/purge.ts`'s `purgeStaleData(db, now?)` sweeps the two tables that grow
+monotonically with every sync operation: rows in `applied_ops` (idempotency
+keys) and tombstoned `items` (`deleted=1`) older than `RETENTION_MS` (30
+days) are deleted. Migration `002-applied-ops-created-at` added
+`applied_ops.created_at` for this (existing rows default to `0`, so they're
+treated as stale and purged on the first sweep — harmless, since an
+idempotency key only needs to survive a short offline-retry window).
+`item_frequency` is deliberately not swept — it's keyed by distinct item
+name per account, not by operation, so it doesn't grow unbounded the way the
+other two do. `buildApp` runs one sweep at startup (next to `seedCategories`,
+same idempotent-on-every-start pattern); `index.ts` additionally reschedules
+it every 24h via `setInterval(...).unref()` for the long-running process
+(tests build a fresh app per case via `makeApp`, so they only ever get the
+one startup sweep, never the interval).
+
+See `docs/backend-known-issues.md` for the current list of deliberately-deferred backend issues (idempotency key scope, cookie renewal on rejected requests, category-clear sentinel, token rotation, etc.) — check it before "fixing" something that looks like a bug but was a scoped MVP tradeoff.
 
 ### Client design (`packages/client/src`)
 

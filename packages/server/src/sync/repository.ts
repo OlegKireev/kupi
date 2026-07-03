@@ -22,7 +22,7 @@ export async function insertAppliedOp(
 ): Promise<boolean> {
   const result = await db
     .insertInto('appliedOps')
-    .values({ listId, clientOpId })
+    .values({ listId, clientOpId, createdAt: Date.now() })
     .onConflict((oc) => oc.doNothing())
     .executeTakeFirst();
   return Number(result.numInsertedOrUpdatedRows ?? 0) > 0;

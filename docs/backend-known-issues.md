@@ -16,7 +16,7 @@
 
 - ~~**Очистка категории** (`categoryId: null`)~~ (решено) — ~~трактуется как «без изменений»~~ — patch уже различал `undefined`/`null` для существующего item; недостающим звеном был только UI: у `ItemEditor` теперь есть чип «Без категории», вызывающий `setCategory(item, null)`. — `sync/merge.ts`, `features/edit-item`
 - **modulo-bias в `newCode`** — на 32-символьном алфавите (256 % 32 == 0) смещения фактически нет; комментарий пессимистичен. — `shared/ids.ts`
-- **Purge sweep** для `applied_ops` и tombstones — растут монотонно. При заведении покрыть и `item_frequency`.
+- ~~**Purge sweep** для `applied_ops` и tombstones~~ (решено) — `db/purge.ts`'s `purgeStaleData` удаляет `applied_ops` и tombstoned items старше `RETENTION_MS` (30 дней); запускается один раз при старте (`app.ts`, как `seedCategories`) и затем раз в сутки через `setInterval(...).unref()` в `index.ts`. Миграция `002-applied-ops-created-at` добавила `applied_ops.created_at` (существующие строки получают 0 — считаются старыми при первом sweep, безопасно: idempotency-ключ нужен только на короткое офлайн-окно). `item_frequency` сознательно не покрыта — она растёт с числом уникальных названий товаров аккаунта, а не с каждой операцией, так что не является unbounded-growth таблицей и не нуждается в возрастном пороге.
 - **Token rotation / recovery**, QR для линковки, realtime-обновления, кастомные категории, name-dedup в suggestions, удаление списков.
 
 См. также раздел «Notes for follow-up plans» в `docs/superpowers/plans/2026-06-30-backend.md`.

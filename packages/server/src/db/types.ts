@@ -16,6 +16,7 @@ export interface Accounts {
 
 export interface AppliedOps {
   clientOpId: string;
+  createdAt: Generated<number>;
   listId: string;
 }
 
