@@ -60,32 +60,40 @@ export function App() {
     }
   }, [lists, categories]);
 
-  // Перезапрашивает GET /lists после мутации (создание/переименование/удаление
-  // списка) — не hot path, ручной патч состояния не нужен. Если после
-  // удаления/выхода списков не осталось, создаёт список по умолчанию — тот же
-  // паттерн, что при онбординге нового аккаунта.
-  const refreshLists = async (selectId?: string): Promise<void> => {
-    let fetchedLists = await getLists();
-    if (fetchedLists.length === 0) {
-      fetchedLists = [await createList('Мои покупки')];
-    }
-    setLists(fetchedLists);
+  // Общий сеттер lists/activeListId с fallback-логикой: если список
+  // оказался пуст (после удаления/выхода, либо у только что привязанного
+  // аккаунта), заводит список по умолчанию — тот же паттерн, что при
+  // онбординге нового аккаунта, вместо молчаливого опустошения экрана.
+  const applyLists = async (
+    fetchedLists: List[],
+    selectId?: string,
+  ): Promise<void> => {
+    const nextLists =
+      fetchedLists.length === 0
+        ? [await createList('Мои покупки')]
+        : fetchedLists;
+    setLists(nextLists);
     setActiveListId((current) => {
       const preferred = selectId ?? current;
-      return preferred && fetchedLists.some((l) => l.id === preferred)
+      return preferred && nextLists.some((l) => l.id === preferred)
         ? preferred
-        : fetchedLists[0]!.id;
+        : nextLists[0]!.id;
     });
+  };
+
+  // Перезапрашивает GET /lists после мутации (создание/переименование/удаление
+  // списка) — не hot path, ручной патч состояния не нужен.
+  const refreshLists = async (selectId?: string): Promise<void> => {
+    await applyLists(await getLists(), selectId);
   };
 
   // Редимпшн линк-кода меняет cookie этого устройства на другой аккаунт —
   // сервер уже вернул полный bootstrap, второй round-trip не нужен. Списки
   // старого аккаунта больше не будут перечитаны, поэтому их localStorage-кеш
   // (`kupi:list:<id>`) чистим здесь, иначе он остаётся в хранилище навсегда.
-  const onAccountLinked = (bootstrap: Bootstrap): void => {
+  const onAccountLinked = async (bootstrap: Bootstrap): Promise<void> => {
     lists.forEach((l) => clearListCache(l.id));
-    setLists(bootstrap.lists);
-    setActiveListId(bootstrap.lists[0]?.id ?? null);
+    await applyLists(bootstrap.lists);
     setCategories(bootstrap.categories);
   };
 

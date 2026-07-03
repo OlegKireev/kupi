@@ -9,7 +9,7 @@ import { codeKind } from './code-kind';
 
 type Params = {
   onListsChanged: (selectId?: string) => void;
-  onAccountLinked: (bootstrap: Bootstrap) => void;
+  onAccountLinked: (bootstrap: Bootstrap) => Promise<void>;
 };
 
 const INVALID_CODE_MESSAGE = 'Неверный код';
@@ -81,7 +81,7 @@ export function useListSwitcher({ onListsChanged, onAccountLinked }: Params) {
     try {
       const bootstrap = await redeemLinkCode(code);
       setPendingLinkCode(null);
-      onAccountLinked(bootstrap);
+      await onAccountLinked(bootstrap);
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {
         setPendingLinkCode(null);

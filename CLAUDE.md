@@ -293,9 +293,16 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   `lists`/`activeListId` (not a single `list`) live here so the header can
   switch between lists; any list mutation (create/rename/delete-leave) calls
   a shared `refreshLists(selectId?)` that just refetches `GET /api/lists` — no
-  manual state patching, this isn't a hot path. If a delete/leave empties
-  `lists`, `refreshLists` creates a fallback "Мои покупки" list, the same
-  pattern used for a brand-new account's first list. A network error (not `ApiError`) during the initial `GET /lists`+`GET
+  manual state patching, this isn't a hot path. Both `refreshLists` and
+  `onAccountLinked` (see `features/list-switcher` above) go through one
+  `applyLists(fetchedLists, selectId?)` helper that sets `lists`/`activeListId`
+  and creates a fallback "Мои покупки" list whenever the list would otherwise
+  be empty — the same pattern for a delete/leave that empties `lists`, a
+  freshly linked account with 0 lists, or a brand-new account's first list.
+  `onAccountLinked` is `async` (awaits `applyLists`, which may await
+  `createList`) — its prop type is `(bootstrap: Bootstrap) => Promise<void>`
+  through every layer (`ListScreenPage`, `ListScreen`, `useListSwitcher`,
+  `ListSwitcher`), and `useListSwitcher`'s `confirmLinkDevice` awaits it. A network error (not `ApiError`) during the initial `GET /lists`+`GET
 /categories` falls back to a `localStorage` cache (`kupi:bootstrap`,
   written by `app/model/bootstrap-cache.ts` on every `lists`/`categories`
   change) — covers reopening the app offline. No cache yet (device's very

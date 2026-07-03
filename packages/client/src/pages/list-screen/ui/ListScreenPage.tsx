@@ -8,7 +8,7 @@ type Props = {
   categories: Category[];
   onSwitchList: (id: string) => void;
   onListsChanged: (selectId?: string) => void;
-  onAccountLinked: (bootstrap: Bootstrap) => void;
+  onAccountLinked: (bootstrap: Bootstrap) => Promise<void>;
 };
 
 export function ListScreenPage({
