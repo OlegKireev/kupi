@@ -4,7 +4,7 @@ import {
   addItem,
   deleteItem,
   openEditor,
-  openListMenu,
+  openListSwitcher,
   pickCategory,
   setQuantity,
   shareList,
@@ -127,7 +127,7 @@ test('a list deleted by its owner disappears for a member on next sync, falling 
   await shareList(owner, guest);
   await expect(guest.getByRole('checkbox', { name: 'Сыр' })).toBeVisible();
 
-  await openListMenu(owner);
+  await openListSwitcher(owner, 'Мои покупки');
   await owner
     .getByRole('menuitem', { name: 'Удалить/покинуть список' })
     .click();

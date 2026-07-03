@@ -26,9 +26,11 @@ test('a malformed code is rejected client-side with no network round-trip', asyn
 }) => {
   await page.goto('/');
   await openListSwitcher(page, 'Мои покупки');
-  await page.getByRole('menuitem', { name: 'Ввести код' }).click();
+  await page
+    .getByRole('menuitem', { name: 'Присоединиться по коду списка' })
+    .click();
   // 5 chars: neither an 8-char invite code nor a 6-char link code
-  await page.getByPlaceholder('Код приглашения или устройства').fill('SHORT');
+  await page.getByPlaceholder('Код приглашения').fill('SHORT');
   await page.getByRole('button', { name: 'Продолжить' }).click();
   await expect(page.getByText('Неверный код')).toBeVisible();
 });
@@ -38,10 +40,10 @@ test('a well-formed but unissued invite code is rejected by the server with the 
 }) => {
   await page.goto('/');
   await openListSwitcher(page, 'Мои покупки');
-  await page.getByRole('menuitem', { name: 'Ввести код' }).click();
   await page
-    .getByPlaceholder('Код приглашения или устройства')
-    .fill('ZZZZZZZZ');
+    .getByRole('menuitem', { name: 'Присоединиться по коду списка' })
+    .click();
+  await page.getByPlaceholder('Код приглашения').fill('ZZZZZZZZ');
   await page.getByRole('button', { name: 'Продолжить' }).click();
   await expect(page.getByText('Неверный код')).toBeVisible();
 });

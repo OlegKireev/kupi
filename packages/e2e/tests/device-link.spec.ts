@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { addItem, openListMenu, openListSwitcher } from './helpers/actions';
+import { addItem, openAccountMenu } from './helpers/actions';
 
 test("a link code warns before replacing the second device's account, then swaps it", async ({
   browser,
@@ -10,9 +10,9 @@ test("a link code warns before replacing the second device's account, then swaps
   await primary.goto('/');
   await addItem(primary, 'Сыр');
 
-  await openListMenu(primary);
+  await openAccountMenu(primary);
   await primary
-    .getByRole('menuitem', { name: 'Подключить устройство' })
+    .getByRole('menuitem', { name: 'Подключить это устройство' })
     .click();
   const linkCode = await primary
     .getByRole('dialog', { name: 'Код подключения устройства' })
@@ -26,10 +26,12 @@ test("a link code warns before replacing the second device's account, then swaps
   // starts on its own separate default list — doesn't see the primary's item yet
   await expect(secondary.getByRole('checkbox', { name: 'Сыр' })).toHaveCount(0);
 
-  await openListSwitcher(secondary, 'Мои покупки');
-  await secondary.getByRole('menuitem', { name: 'Ввести код' }).click();
+  await openAccountMenu(secondary);
   await secondary
-    .getByPlaceholder('Код приглашения или устройства')
+    .getByRole('menuitem', { name: 'Ввести код устройства' })
+    .click();
+  await secondary
+    .getByPlaceholder('Код подключения устройства')
     .fill(linkCode);
   await secondary.getByRole('button', { name: 'Продолжить' }).click();
 

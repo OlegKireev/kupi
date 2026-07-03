@@ -35,10 +35,6 @@ export async function deleteItem(page: Page, name: string): Promise<void> {
   await page.getByRole('button', { name: 'Удалить' }).click();
 }
 
-export async function openListMenu(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Меню списка' }).click();
-}
-
 export async function openListSwitcher(
   page: Page,
   currentListName: string,
@@ -46,10 +42,14 @@ export async function openListSwitcher(
   await page.getByRole('button', { name: currentListName }).click();
 }
 
+export async function openAccountMenu(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Меню аккаунта' }).click();
+}
+
 /** Owner создаёт инвайт-код, guest вводит его — оба заканчивают на одном общем списке. */
 export async function shareList(owner: Page, guest: Page): Promise<void> {
-  await openListMenu(owner);
-  await owner.getByRole('menuitem', { name: 'Пригласить' }).click();
+  await openListSwitcher(owner, 'Мои покупки');
+  await owner.getByRole('menuitem', { name: 'Пригласить в список' }).click();
   const inviteCode = await owner
     .getByRole('dialog', { name: 'Код приглашения' })
     .getByText(/^[A-Z0-9]{8}$/)
@@ -57,9 +57,9 @@ export async function shareList(owner: Page, guest: Page): Promise<void> {
   await owner.keyboard.press('Escape'); // Mantine Modal closes on Escape by default
 
   await openListSwitcher(guest, 'Мои покупки');
-  await guest.getByRole('menuitem', { name: 'Ввести код' }).click();
   await guest
-    .getByPlaceholder('Код приглашения или устройства')
-    .fill(inviteCode);
+    .getByRole('menuitem', { name: 'Присоединиться по коду списка' })
+    .click();
+  await guest.getByPlaceholder('Код приглашения').fill(inviteCode);
   await guest.getByRole('button', { name: 'Продолжить' }).click();
 }
