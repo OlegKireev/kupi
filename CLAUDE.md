@@ -253,45 +253,53 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   `ItemEditor` by `expandedItemId`. `toggle-item`/`add-item`/`edit-item`
   build an `ItemChange` and call `useItemSync`'s `applyChange` directly —
   none of them know about `syncItems`/the network anymore.
-- **`features/list-switcher`** — the list title + `CaretDown` in the header;
-  tapping it opens a Mantine `Menu` listing the user's `lists` (switch is a
-  synchronous prop callback, no refetch) plus "Новый список", which opens a
-  small `Modal` with a `TextInput` calling `createList`, and "Ввести код",
-  the receiving side of both `list-menu` share flows. `model/useListSwitcher.ts`
-  (by analogy with `list-menu/model/useListMenu.ts`) owns all three modals'
-  state; `model/code-kind.ts` classifies the typed code by length — 8 chars
-  is a list invite (`joinList` → `POST /api/lists/join`), 6 is a device link
-  code (`redeemLinkCode` → `POST /api/link`), anything else is rejected
-  client-side with no network call. Redeeming a device link code shows a
-  warning modal first (it replaces this device's account cookie — any lists
-  it currently has become unreachable from it, recovery isn't implemented)
-  and, on confirm, calls the new `onAccountLinked(bootstrap)` prop — piped
-  down from `app/App.tsx` the same way `onSwitchList`/`onListsChanged` are —
-  which replaces `lists`/`categories`/`activeListId` wholesale from the
-  `Bootstrap` the server already returns from `POST /api/link`, no second
-  round-trip.
-  `400 invalid_code` from either endpoint, and a client-side-rejected code,
-  surface as an `@mantine/notifications` toast (new dependency — the first
-  reusable error-toast pattern in the app, mounted once in `main.tsx`). It
-  doesn't own the list of lists — `lists`/`activeListId` and the
-  switch/refresh callbacks are all passed down from `app/App.tsx`.
-- **`features/list-menu`** — the "⋮" `ActionIcon`, one Mantine `Menu` bundling
-  the whole "list settings" scene (same one-slice-per-UX-scene pattern as
-  `edit-item`): "Пригласить" (`POST /api/lists/:id/invites`) and "Подключить
-  устройство" (`POST /api/link-codes`, its own `api/link-code-api.ts` since
-  device-linking isn't list domain — same reasoning as `add-item`'s
-  `suggestions-api.ts`) both open the same code-`Modal` shape with a
-  "Копировать" button (`navigator.clipboard.writeText`); "Участники (N)" is a
-  disabled label that lazy-loads `getMemberCount` on menu open; "Переименовать
-  список" opens a `Modal` pre-filled with the current name; "Удалить/покинуть
-  список" is a single confirm-`Modal` and a single `deleteList` call
-  regardless of role — `DELETE /api/lists/:id`'s owner-deletes-vs-member-leaves
-  branching happens entirely server-side, the client never checks who owns
-  the list. The dropdown's first entry is a non-interactive `Menu.Label` showing sync
-  status — derived from `entities/item`'s `pendingCount`/`failedCount` (piped
-  down from `ListScreen`) and `shared/lib/useOnlineStatus.ts` by
-  `model/sync-status.ts`'s `getSyncStatusText` — the sync-status line
-  deferred in `2026-07-01-list-header-menu-design.md`.
+- **`features/list-switcher`** — the list title + `CaretDown` in the header,
+  the single entry point for everything list-domain (redesigned per
+  `docs/superpowers/specs/2026-07-03-list-header-menu-redesign-design.md`,
+  which split the former ambiguous "⋮" menu into a list-scoped menu here and
+  an account-scoped menu in `features/account-menu`). Tapping the title opens
+  one Mantine `Menu`, top to bottom: a non-interactive `Menu.Label` sync-status
+  line (`model/sync-status.ts`'s `getSyncStatusText`, driven by
+  `entities/item`'s `pendingCount`/`failedCount` piped down from `ListScreen`
+  and `shared/lib/useOnlineStatus.ts`); "Пригласить в список"
+  (`POST /api/lists/:id/invites`, code-`Modal` with a "Копировать" button);
+  "Участники (N)", a disabled label lazy-loading `getMemberCount` on menu
+  open; "Переименовать список", a `Modal` pre-filled with the current name;
+  "Удалить/покинуть список", a single confirm-`Modal` and single `deleteList`
+  call regardless of role (`DELETE /api/lists/:id`'s
+  owner-deletes-vs-member-leaves branching is entirely server-side, the
+  client never checks who owns the list); a divider; the user's other `lists`
+  (switch is a synchronous prop callback, no refetch), the active one marked
+  with a `CheckIcon` in `rightSection` instead of background highlighting (to
+  avoid clashing with Mantine `Menu.Item`'s hover style); a divider; "Новый
+  список" (`Modal` + `TextInput` → `createList`); "Присоединиться по коду
+  списка" (`Modal` + `TextInput`, list-invite codes only — 8 chars, no more
+  length-based guessing) → `joinList`. `model/useListSwitcher.ts` owns all of
+  this state (absorbed from the deleted `list-menu/model/useListMenu.ts`);
+  `model/code-kind.ts` is deleted along with it — device link codes are
+  entered exclusively through `account-menu` now, so there's no code input
+  left that needs to guess its type by length. `400 invalid_code` surfaces as
+  an `@mantine/notifications` toast (`notifications`, mounted once in
+  `main.tsx`). It doesn't own the list of lists — `lists`/`activeListId` and
+  the switch/refresh callbacks are all passed down from `app/App.tsx`.
+- **`features/account-menu`** — a `UserCircleIcon` `ActionIcon` next to
+  `list-switcher` in the header (replaces the old `list-menu`'s
+  `DotsThreeVerticalIcon`, now dropped from `shared/ui`'s re-export), the
+  device/account counterpart split out of the same redesign. Menu: "Подключить
+  это устройство" → `createLinkCode` (`api/link-code-api.ts`, moved here from
+  the deleted `list-menu`), code-`Modal` with "Копировать" — same shape as
+  list-switcher's invite modal, just a different code; "Ввести код устройства"
+  → `Modal` + `TextInput` (device codes only — 6 chars) → a warning
+  confirm-`Modal` ("заменит аккаунт этого устройства... текущие списки станут
+  недоступны", recovery isn't implemented) → on confirm, `redeemLinkCode` then
+  `onAccountLinked(bootstrap)`; "QR-код (скоро)" — a disabled `Menu.Item`
+  reserving space for a not-yet-built QR flow (`QrCodeIcon`), out of scope for
+  now. `model/useAccountMenu.ts` owns this state (device-link half ported
+  unchanged from the old `useListSwitcher`/`useListMenu`).
+  `onAccountLinked(bootstrap: Bootstrap) => Promise<void>` — piped down from
+  `app/App.tsx` the same way `onSwitchList`/`onListsChanged` are — replaces
+  `lists`/`categories`/`activeListId` wholesale from the `Bootstrap` the
+  server already returns from `POST /api/link`, no second round-trip.
 - **`pages/list-screen`** + **`app/App.tsx`** — bootstrap flow: `GET /api/lists` +
   `GET /api/categories` in parallel; a `401` (brand-new device, no `kupi_dt`
   cookie yet) falls back to `POST /api/accounts`, which creates the
@@ -303,15 +311,15 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   switch between lists; any list mutation (create/rename/delete-leave) calls
   a shared `refreshLists(selectId?)` that just refetches `GET /api/lists` — no
   manual state patching, this isn't a hot path. Both `refreshLists` and
-  `onAccountLinked` (see `features/list-switcher` above) go through one
+  `onAccountLinked` (see `features/account-menu` above) go through one
   `applyLists(fetchedLists, selectId?)` helper that sets `lists`/`activeListId`
   and creates a fallback "Мои покупки" list whenever the list would otherwise
   be empty — the same pattern for a delete/leave that empties `lists`, a
   freshly linked account with 0 lists, or a brand-new account's first list.
   `onAccountLinked` is `async` (awaits `applyLists`, which may await
   `createList`) — its prop type is `(bootstrap: Bootstrap) => Promise<void>`
-  through every layer (`ListScreenPage`, `ListScreen`, `useListSwitcher`,
-  `ListSwitcher`), and `useListSwitcher`'s `confirmLinkDevice` awaits it. A network error (not `ApiError`) during the initial `GET /lists`+`GET
+  through every layer (`ListScreenPage`, `ListScreen`, `useAccountMenu`,
+  `AccountMenu`), and `useAccountMenu`'s `confirmLinkDevice` awaits it. A network error (not `ApiError`) during the initial `GET /lists`+`GET
 /categories` falls back to a `localStorage` cache (`kupi:bootstrap`,
   written by `app/model/bootstrap-cache.ts` on every `lists`/`categories`
   change) — covers reopening the app offline. No cache yet (device's very
@@ -319,15 +327,18 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   a regression.
 
 Icons throughout the header/menu are `@phosphor-icons/react` components
-(`CaretDown`, `DotsThreeVertical`, `Copy`, `Trash`), not the text glyphs
+(`CaretDown`, `UserCircle`, `Copy`, `Trash`), not the text glyphs
 (`▾`/`⋮`) the original UI design spec assumed — a decision made once the
 header was actually implemented, see
 `docs/superpowers/specs/2026-07-01-list-header-menu-design.md`. That spec also
 documented the sync-status line as deferred pending a client-side
-offline-change queue — now implemented (see `features/list-menu` above,
+offline-change queue — now implemented (see `features/list-switcher` above,
 `docs/superpowers/specs/2026-07-02-offline-sync-queue-design.md`). The
 other deferred piece — redeeming an invite/link code — is now built (see
-`features/list-switcher` above, `docs/superpowers/specs/2026-07-02-redeem-code-design.md`).
+`features/account-menu` above, `docs/superpowers/specs/2026-07-02-redeem-code-design.md`).
+The original combined "⋮" `list-menu` slice from that work was later split
+into `list-switcher` (list-domain actions) and `account-menu` (device/account
+actions) — see `docs/superpowers/specs/2026-07-03-list-header-menu-redesign-design.md`.
 Deep links (`?code=...` auto-opening the modal) and QR codes for device
 linking are still out of scope — codes are copy-pasted by hand today — as is
 recovery for a device that gets orphaned by redeeming a link code onto a
