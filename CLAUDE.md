@@ -345,3 +345,7 @@ smell) and `fsd/repetitive-naming` (the `*-item` feature names are the
 clearest domain vocabulary available, the rule only sees the repeated word).
 
 Design/planning docs live under `docs/superpowers/` (specs and plans); they capture the reasoning behind the current schema and protocol in more depth than inline comments do.
+
+## Git workflow
+
+Don't use worktree branches, work directly on `master` branch without feature branches. Use subagents if it's possible, or if you need to work on multiple features at once.
