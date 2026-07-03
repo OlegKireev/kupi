@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { List } from '@kupi/shared';
 
@@ -11,6 +11,7 @@ import {
   renameList,
 } from '@/entities/list';
 import { ApiError } from '@/shared/api';
+import { buildDeepLink } from '@/shared/lib/deep-link';
 import { useOnlineStatus } from '@/shared/lib/useOnlineStatus';
 import { notifications } from '@/shared/ui';
 import { getSyncStatusText } from './sync-status';
@@ -20,9 +21,11 @@ type Params = {
   onListsChanged: (selectId?: string) => void;
   pendingCount: number;
   failedCount: number;
+  initialCode?: string;
+  onDeepLinkConsumed: () => void;
 };
 
-type InviteModalState = { title: string; code: string } | null;
+type InviteModalState = { title: string; code: string; url: string } | null;
 
 const INVALID_CODE_MESSAGE = 'Неверный код';
 
@@ -31,6 +34,8 @@ export function useListSwitcher({
   onListsChanged,
   pendingCount,
   failedCount,
+  initialCode,
+  onDeepLinkConsumed,
 }: Params) {
   const online = useOnlineStatus();
   const syncStatusText = getSyncStatusText(pendingCount, failedCount, online);
@@ -46,13 +51,30 @@ export function useListSwitcher({
   const [codeOpen, setCodeOpen] = useState(false);
   const [codeValue, setCodeValue] = useState('');
 
+  // Диплинк (?listCode=...) предзаполняет и открывает ту же модалку, что
+  // открыл бы ручной ввод — тап по «Продолжить» и есть подтверждение.
+  const deepLinkConsumed = useRef(false);
+  useEffect(() => {
+    if (deepLinkConsumed.current || !initialCode) {
+      return;
+    }
+    deepLinkConsumed.current = true;
+    setCodeValue(initialCode);
+    setCodeOpen(true);
+    onDeepLinkConsumed();
+  }, [initialCode, onDeepLinkConsumed]);
+
   const loadMemberCount = (): void => {
     void getMemberCount(list.id).then(setMemberCount);
   };
 
   const openInvite = async (): Promise<void> => {
     const { code } = await createInvite(list.id);
-    setInviteModal({ title: 'Код приглашения', code });
+    setInviteModal({
+      title: 'Код приглашения',
+      code,
+      url: buildDeepLink('list', code),
+    });
   };
 
   const closeInviteModal = (): void => setInviteModal(null);

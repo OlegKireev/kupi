@@ -4,7 +4,7 @@ import {
   Button,
   CaretDownIcon,
   CheckIcon,
-  CopyIcon,
+  CodeShareModal,
   FilePlusIcon,
   Group,
   KeyIcon,
@@ -29,6 +29,8 @@ type Props = {
   onListsChanged: (selectId?: string) => void;
   pendingCount: number;
   failedCount: number;
+  initialCode?: string;
+  onDeepLinkConsumed: () => void;
 };
 
 export function ListSwitcher({
@@ -38,6 +40,8 @@ export function ListSwitcher({
   onListsChanged,
   pendingCount,
   failedCount,
+  initialCode,
+  onDeepLinkConsumed,
 }: Props) {
   const {
     syncStatusText,
@@ -68,7 +72,14 @@ export function ListSwitcher({
     openCode,
     closeCode,
     submitCode,
-  } = useListSwitcher({ list, onListsChanged, pendingCount, failedCount });
+  } = useListSwitcher({
+    list,
+    onListsChanged,
+    pendingCount,
+    failedCount,
+    initialCode,
+    onDeepLinkConsumed,
+  });
 
   return (
     <>
@@ -145,27 +156,13 @@ export function ListSwitcher({
         </Menu.Dropdown>
       </Menu>
 
-      <Modal
+      <CodeShareModal
         opened={inviteModal !== null}
         onClose={closeInviteModal}
-        title={inviteModal?.title}
-      >
-        <Text
-          size="xl"
-          fw={700}
-          ta="center"
-        >
-          {inviteModal?.code}
-        </Text>
-        <Button
-          mt="md"
-          fullWidth
-          leftSection={<CopyIcon size={16} />}
-          onClick={() => navigator.clipboard.writeText(inviteModal?.code ?? '')}
-        >
-          Копировать
-        </Button>
-      </Modal>
+        title={inviteModal?.title ?? ''}
+        url={inviteModal?.url ?? ''}
+        code={inviteModal?.code ?? ''}
+      />
 
       <Modal
         opened={renameOpen}
