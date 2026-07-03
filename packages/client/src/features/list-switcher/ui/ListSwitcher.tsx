@@ -1,17 +1,23 @@
-import type { Bootstrap, List } from '@kupi/shared';
+import type { List } from '@kupi/shared';
 
 import {
   Button,
+  CaretDownIcon,
+  CheckIcon,
+  CopyIcon,
+  FilePlusIcon,
   Group,
+  KeyIcon,
   Menu,
   Modal,
   Text,
+  TextboxIcon,
   TextInput,
   Title,
+  TrashIcon,
   UnstyledButton,
-  CaretDownIcon,
-  FilePlusIcon,
-  KeyIcon,
+  UserPlusIcon,
+  UsersFourIcon,
 } from '@/shared/ui';
 import { useListSwitcher } from '../model/useListSwitcher';
 
@@ -20,7 +26,8 @@ type Props = {
   lists: List[];
   onSwitchList: (id: string) => void;
   onListsChanged: (selectId?: string) => void;
-  onAccountLinked: (bootstrap: Bootstrap) => Promise<void>;
+  pendingCount: number;
+  failedCount: number;
 };
 
 export function ListSwitcher({
@@ -28,9 +35,26 @@ export function ListSwitcher({
   lists,
   onSwitchList,
   onListsChanged,
-  onAccountLinked,
+  pendingCount,
+  failedCount,
 }: Props) {
   const {
+    syncStatusText,
+    memberCount,
+    loadMemberCount,
+    inviteModal,
+    openInvite,
+    closeInviteModal,
+    renameOpen,
+    renameValue,
+    setRenameValue,
+    openRename,
+    closeRename,
+    submitRename,
+    confirmDeleteOpen,
+    openConfirmDelete,
+    closeConfirmDelete,
+    confirmDelete,
     newListOpen,
     newListName,
     setNewListName,
@@ -43,14 +67,11 @@ export function ListSwitcher({
     openCode,
     closeCode,
     submitCode,
-    pendingLinkCode,
-    cancelLinkDevice,
-    confirmLinkDevice,
-  } = useListSwitcher({ onListsChanged, onAccountLinked });
+  } = useListSwitcher({ list, onListsChanged, pendingCount, failedCount });
 
   return (
     <>
-      <Menu>
+      <Menu onOpen={loadMemberCount}>
         <Menu.Target>
           <UnstyledButton>
             <Group
@@ -68,24 +89,117 @@ export function ListSwitcher({
           </UnstyledButton>
         </Menu.Target>
         <Menu.Dropdown>
+          <Menu.Label>{syncStatusText}</Menu.Label>
+          <Menu.Item
+            leftSection={<UserPlusIcon size={16} />}
+            onClick={openInvite}
+          >
+            Пригласить в список
+          </Menu.Item>
+          <Menu.Item
+            disabled
+            leftSection={<UsersFourIcon size={16} />}
+          >
+            Участники ({memberCount ?? '…'})
+          </Menu.Item>
+          <Menu.Item
+            leftSection={<TextboxIcon size={16} />}
+            onClick={openRename}
+          >
+            Переименовать список
+          </Menu.Item>
+          <Menu.Item
+            color="red"
+            leftSection={<TrashIcon size={16} />}
+            onClick={openConfirmDelete}
+          >
+            Удалить/покинуть список
+          </Menu.Item>
+          <Menu.Divider />
           {lists.map((l) => (
             <Menu.Item
               key={l.id}
+              rightSection={l.id === list.id ? <CheckIcon size={16} /> : null}
               onClick={() => onSwitchList(l.id)}
             >
               {l.name}
             </Menu.Item>
           ))}
           <Menu.Divider />
-          <Menu.Item onClick={openNewList}>Новый список</Menu.Item>
+          <Menu.Item
+            leftSection={<FilePlusIcon size={16} />}
+            onClick={openNewList}
+          >
+            Новый список
+          </Menu.Item>
           <Menu.Item
             leftSection={<KeyIcon size={16} />}
             onClick={openCode}
           >
-            Ввести код
+            Присоединиться по коду списка
           </Menu.Item>
         </Menu.Dropdown>
       </Menu>
+
+      <Modal
+        opened={inviteModal !== null}
+        onClose={closeInviteModal}
+        title={inviteModal?.title}
+      >
+        <Text
+          size="xl"
+          fw={700}
+          ta="center"
+        >
+          {inviteModal?.code}
+        </Text>
+        <Button
+          mt="md"
+          fullWidth
+          leftSection={<CopyIcon size={16} />}
+          onClick={() => navigator.clipboard.writeText(inviteModal?.code ?? '')}
+        >
+          Копировать
+        </Button>
+      </Modal>
+
+      <Modal
+        opened={renameOpen}
+        onClose={closeRename}
+        title="Переименовать список"
+      >
+        <TextInput
+          value={renameValue}
+          onChange={(e) => setRenameValue(e.currentTarget.value)}
+          data-autofocus
+        />
+        <Button
+          mt="md"
+          fullWidth
+          onClick={submitRename}
+        >
+          Сохранить
+        </Button>
+      </Modal>
+
+      <Modal
+        opened={confirmDeleteOpen}
+        onClose={closeConfirmDelete}
+        title="Удалить/покинуть список?"
+      >
+        <Text>
+          Если вы владелец — список удалится для всех участников. Если вы
+          участник — вы просто выйдете из него.
+        </Text>
+        <Button
+          mt="md"
+          fullWidth
+          color="red"
+          onClick={confirmDelete}
+        >
+          Подтвердить
+        </Button>
+      </Modal>
 
       <Modal
         opened={newListOpen}
@@ -111,12 +225,12 @@ export function ListSwitcher({
       <Modal
         opened={codeOpen}
         onClose={closeCode}
-        title="Ввести код"
+        title="Присоединиться по коду списка"
       >
         <TextInput
           value={codeValue}
           onChange={(e) => setCodeValue(e.currentTarget.value)}
-          placeholder="Код приглашения или устройства"
+          placeholder="Код приглашения"
           data-autofocus
         />
         <Button
@@ -126,25 +240,6 @@ export function ListSwitcher({
           onClick={submitCode}
         >
           Продолжить
-        </Button>
-      </Modal>
-
-      <Modal
-        opened={pendingLinkCode !== null}
-        onClose={cancelLinkDevice}
-        title="Подключить устройство?"
-      >
-        <Text>
-          Это заменит аккаунт этого устройства. Текущие списки станут недоступны
-          с него. Продолжить?
-        </Text>
-        <Button
-          mt="md"
-          fullWidth
-          color="red"
-          onClick={confirmLinkDevice}
-        >
-          Подключить
         </Button>
       </Modal>
     </>
