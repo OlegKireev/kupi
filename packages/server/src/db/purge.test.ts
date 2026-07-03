@@ -29,10 +29,7 @@ test('purgeStaleData удаляет applied_ops старше окна хране
   const now = Date.now();
   await purgeStaleData(app.db, now + RETENTION_MS + 1);
 
-  const remaining = await app.db
-    .selectFrom('appliedOps')
-    .selectAll()
-    .execute();
+  const remaining = await app.db.selectFrom('appliedOps').selectAll().execute();
   assert.deepEqual(remaining, []);
 
   await app.close();
