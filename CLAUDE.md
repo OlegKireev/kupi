@@ -31,7 +31,7 @@ Run a single server test file directly (from `packages/server`), tests live next
 Filter by test name: add `--test-name-pattern <regex>`.
 
 `packages/server` also has `db:generate-types` (regenerate `src/db/types.ts`
-from `db/schema.ts` via `kysely-codegen`, run after editing the DDL) and
+from `db/migrations/` via `kysely-codegen`, run after adding a migration) and
 `db:verify-types` (same, fails without writing — wired into `pretest`, so
 `pnpm test` always catches a forgotten regeneration).
 
@@ -64,21 +64,46 @@ the tables it owns), plus a test file living next to the code it covers:
   `better-sqlite3` handle (`openSqlite`) and wraps it in a typesafe Kysely
   query builder (`createDb`, using `SqliteDialect` + `CamelCasePlugin` so
   query-builder code is camelCase while the actual SQLite columns stay
-  snake_case). `schema.ts` is the one place that still uses raw SQL:
-  idempotent DDL (`CREATE TABLE IF NOT EXISTS`) plus seeding a fixed preset
-  category list — kept raw because it's the single source of truth for the
-  schema. `types.ts` (the Kysely `DB` interface, one type per table) is
-  **generated, not hand-written** — `scripts/generate-db-types.ts` boots an
-  in-memory SQLite from `schema.ts`'s `initSchema` and runs `kysely-codegen`
-  against it, so the types can never drift from the real DDL. Run
-  `pnpm --filter @kupi/server db:generate-types` after editing `schema.ts`;
-  `db:verify-types` (wired into `pretest`) fails the build if someone forgot.
-  `src/db/types.ts` is excluded from `oxfmt` (see root `.prettierignore`) so
-  its checked-in content stays byte-identical to what codegen produces —
-  otherwise the formatter would permanently desync it from `--verify`.
-  (Codegen also caught a real gap once: SQLite's `TEXT PRIMARY KEY` isn't
-  implicitly `NOT NULL` the way Postgres's is, so every single-column text PK
-  in `schema.ts` now says `NOT NULL` explicitly.)
+  snake_case). Schema is versioned via a real Kysely `Migrator`
+  (`migrator.ts`): `db/migrations/` holds one file per migration
+  (`001-init.ts`, ..., each exporting `up`/optional `down`, raw SQL via
+  Kysely's `sql` tag — one statement per `sql.raw(...).execute(db)` call,
+  since better-sqlite3 rejects multi-statement strings through Kysely's
+  driver), registered in `db/migrations/index.ts`'s `migrations` record.
+  `migrateToLatest(db)` runs whatever hasn't been applied yet, tracked in
+  the `kysely_migration` table — this replaced a plain `CREATE TABLE IF NOT
+  EXISTS` DDL blob that could only ever create tables, never alter existing
+  ones, which is what caused a real incident: a column added to
+  `applied_ops`/`items` in `schema.ts` never reached already-existing dev
+  `kupi.db` files, so `sync` returned `SQLITE_ERROR: table applied_ops has
+  no column named list_id` until the stale file was deleted by hand.
+  Migration `001-init` still uses `CREATE TABLE IF NOT EXISTS` (not plain
+  `CREATE TABLE`) — every pre-migrator dev DB already has these tables from
+  the old `schema.ts` DDL but no `kysely_migration` bookkeeping, so the
+  first real run must be a no-op adopting the existing schema, not a
+  collision. Future migrations don't need that guard, only 001 does (its
+  job is exactly to adopt pre-migrator databases). `buildApp` (`app.ts`) is
+  now `async` — it builds the Kysely `db`, awaits `migrateToLatest(db)`,
+  then calls `schema.ts`'s `seedCategories(sqlite)` — every caller
+  (`index.ts`, `shared/test-helpers.ts`'s `makeApp`, and every test that
+  used to call `buildApp`/`makeApp` synchronously) awaits it now.
+  `schema.ts` itself now only holds the preset category list and
+  `seedCategories` — categories are seed data, not schema, so they stay
+  outside the migrator (idempotent `INSERT OR IGNORE`, run on every
+  startup regardless of migration state). `types.ts` (the Kysely `DB`
+  interface, one type per table) is **generated, not hand-written** —
+  `scripts/generate-db-types.ts` boots an in-memory SQLite, runs
+  `migrateToLatest`, and feeds that to `kysely-codegen`, so the types can
+  never drift from what the migrations actually create. Run
+  `pnpm --filter @kupi/server db:generate-types` after adding a migration;
+  `db:verify-types` (wired into `pretest`) fails the build if someone
+  forgot. `src/db/types.ts` is excluded from `oxfmt` (see root
+  `.prettierignore`) so its checked-in content stays byte-identical to what
+  codegen produces — otherwise the formatter would permanently desync it
+  from `--verify`. (Codegen also caught a real gap once: SQLite's `TEXT
+  PRIMARY KEY` isn't implicitly `NOT NULL` the way Postgres's is, so every
+  single-column text PK in `db/migrations/001-init.ts` says `NOT NULL`
+  explicitly.)
 - **`shared/`** — cross-domain utilities: `ids.ts` (id/token/code generation,
   name normalization) and `test-helpers.ts` (`makeApp`/`signup`, used by every
   domain's tests).

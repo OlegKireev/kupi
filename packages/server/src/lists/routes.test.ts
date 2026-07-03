@@ -6,7 +6,7 @@ import type { List } from '@kupi/shared';
 import { makeApp, signup } from '@/shared/test-helpers';
 
 test("GET /lists returns only the caller's lists", async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const a = await signup(app);
 
   const res = await app.inject({
@@ -22,7 +22,7 @@ test("GET /lists returns only the caller's lists", async () => {
 });
 
 test('owner invites, second account joins and gains access', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const owner = await signup(app);
   const guest = await signup(app);
   const listId = owner.bootstrap.lists[0]!.id;
@@ -55,7 +55,7 @@ test('owner invites, second account joins and gains access', async () => {
 });
 
 test('non-member cannot rename or invite (isolation, 404)', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const owner = await signup(app);
   const outsider = await signup(app);
   const listId = owner.bootstrap.lists[0]!.id;
@@ -79,7 +79,7 @@ test('non-member cannot rename or invite (isolation, 404)', async () => {
 });
 
 test('POST /lists with an empty name is rejected by validation (400)', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const { cookie } = await signup(app);
   const res = await app.inject({
     method: 'POST',
@@ -92,7 +92,7 @@ test('POST /lists with an empty name is rejected by validation (400)', async () 
 });
 
 test('owner deletes list — gone for owner and all members', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const owner = await signup(app);
   const guest = await signup(app);
   const listId = owner.bootstrap.lists[0]!.id;
@@ -145,7 +145,7 @@ test('owner deletes list — gone for owner and all members', async () => {
 });
 
 test('member leaves list — list still exists for owner', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const owner = await signup(app);
   const guest = await signup(app);
   const listId = owner.bootstrap.lists[0]!.id;
@@ -198,7 +198,7 @@ test('member leaves list — list still exists for owner', async () => {
 });
 
 test('non-member cannot delete list (404)', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const owner = await signup(app);
   const outsider = await signup(app);
   const listId = owner.bootstrap.lists[0]!.id;
@@ -214,7 +214,7 @@ test('non-member cannot delete list (404)', async () => {
 });
 
 test('GET /lists/:id/members returns member count, grows as accounts join', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const owner = await signup(app);
   const guest = await signup(app);
   const listId = owner.bootstrap.lists[0]!.id;
@@ -250,7 +250,7 @@ test('GET /lists/:id/members returns member count, grows as accounts join', asyn
 });
 
 test('GET /lists/:id/members is 404 for non-members', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const owner = await signup(app);
   const outsider = await signup(app);
   const listId = owner.bootstrap.lists[0]!.id;

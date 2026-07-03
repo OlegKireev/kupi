@@ -10,7 +10,7 @@ import { COOKIE } from '@/auth/auth';
  * Создаёт новый Fastify app с in-memory БД.
  * Удобно для тестов — каждый тест получает изолированное состояние.
  */
-export function makeApp(): FastifyInstance {
+export function makeApp(): Promise<FastifyInstance> {
   return buildApp(new Database(':memory:'));
 }
 

@@ -7,7 +7,7 @@ import { COOKIE } from '@/auth/auth';
 import { makeApp, signup } from '@/shared/test-helpers';
 
 test('device B links to account A and sees the same list', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const a = await signup(app);
 
   const codeRes = await app.inject({
@@ -36,7 +36,7 @@ test('device B links to account A and sees the same list', async () => {
 });
 
 test('a link code cannot be redeemed twice', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const a = await signup(app);
   const codeRes = await app.inject({
     method: 'POST',
@@ -63,7 +63,7 @@ test('a link code cannot be redeemed twice', async () => {
 });
 
 test('POST /link with a missing code is rejected by validation (400)', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const res = await app.inject({
     method: 'POST',
     url: '/api/link',

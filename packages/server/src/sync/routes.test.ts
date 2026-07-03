@@ -21,7 +21,7 @@ function sync(
 }
 
 test('create item, then delta-pull only sees it above last_seen_seq', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const u = await signup(app);
   const listId = u.bootstrap.lists[0]!.id;
 
@@ -51,7 +51,7 @@ test('create item, then delta-pull only sees it above last_seen_seq', async () =
 });
 
 test('edits to different fields both survive (column-wise patch)', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const u = await signup(app);
   const listId = u.bootstrap.lists[0]!.id;
 
@@ -93,7 +93,7 @@ test('edits to different fields both survive (column-wise patch)', async () => {
 });
 
 test('remove wins: a deleted item is not resurrected by a later edit', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const u = await signup(app);
   const listId = u.bootstrap.lists[0]!.id;
 
@@ -132,7 +132,7 @@ test('remove wins: a deleted item is not resurrected by a later edit', async () 
 });
 
 test('replaying the same clientOpId is idempotent', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const u = await signup(app);
   const listId = u.bootstrap.lists[0]!.id;
 
@@ -160,7 +160,7 @@ test('replaying the same clientOpId is idempotent', async () => {
 });
 
 test('the same clientOpId reused on a different list is applied, not deduped', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const u = await signup(app);
   const listA = u.bootstrap.lists[0]!.id;
 
@@ -204,7 +204,7 @@ test('the same clientOpId reused on a different list is applied, not deduped', a
 });
 
 test('the same itemId reused on a different list does not corrupt the original item', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const u = await signup(app);
   const listA = u.bootstrap.lists[0]!.id;
 
@@ -252,7 +252,7 @@ test('the same itemId reused on a different list does not corrupt the original i
 });
 
 test('re-adding a deleted item by name restores its last category', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const u = await signup(app);
   const listId = u.bootstrap.lists[0]!.id;
 
@@ -302,7 +302,7 @@ test('re-adding a deleted item by name restores its last category', async () => 
 });
 
 test('categoryId: null on an existing item clears its category', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const u = await signup(app);
   const listId = u.bootstrap.lists[0]!.id;
 
@@ -337,7 +337,7 @@ test('categoryId: null on an existing item clears its category', async () => {
 });
 
 test('non-member cannot sync (404)', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const owner = await signup(app);
   const outsider = await signup(app);
   const listId = owner.bootstrap.lists[0]!.id;
@@ -352,7 +352,7 @@ test('non-member cannot sync (404)', async () => {
 });
 
 test('malformed sync body is rejected by validation (400)', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const u = await signup(app);
   const listId = u.bootstrap.lists[0]!.id;
 
@@ -366,7 +366,7 @@ test('malformed sync body is rejected by validation (400)', async () => {
 });
 
 test('adding items feeds frequency-ranked suggestions', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const u = await signup(app);
   const listId = u.bootstrap.lists[0]!.id;
 

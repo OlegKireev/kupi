@@ -6,7 +6,7 @@ import { buildApp } from '@/app';
 
 test('GET /health returns ok', async () => {
   const sqlite = new Database(':memory:');
-  const app = buildApp(sqlite);
+  const app = await buildApp(sqlite);
 
   const res = await app.inject({ method: 'GET', url: '/api/health' });
 

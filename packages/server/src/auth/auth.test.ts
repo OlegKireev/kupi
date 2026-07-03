@@ -6,7 +6,7 @@ import { buildApp } from '@/app';
 import { COOKIE } from '@/auth/auth';
 
 test('protected route returns 401 without a cookie', async () => {
-  const app = buildApp(new Database(':memory:'));
+  const app = await buildApp(new Database(':memory:'));
   const res = await app.inject({ method: 'GET', url: '/api/lists' });
   assert.equal(res.statusCode, 401);
   await app.close();
@@ -14,7 +14,7 @@ test('protected route returns 401 without a cookie', async () => {
 
 test('valid device token authenticates and refreshes the cookie', async () => {
   const sqlite = new Database(':memory:');
-  const app = buildApp(sqlite);
+  const app = await buildApp(sqlite);
 
   const now = Date.now();
   sqlite

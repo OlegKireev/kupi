@@ -2,7 +2,7 @@ import { buildApp } from '@/app';
 import { openSqlite } from '@/db/connection';
 
 const sqlite = openSqlite(process.env.DB_PATH);
-const app = buildApp(sqlite);
+const app = await buildApp(sqlite);
 
 const port = Number(process.env.PORT ?? 3000);
 

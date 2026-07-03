@@ -8,19 +8,25 @@ import {
 import { accountRoutes } from '@/accounts/routes';
 import { registerAuth } from '@/auth/auth';
 import { createDb, type Db } from '@/db/connection';
-import { initSchema } from '@/db/schema';
+import { migrateToLatest } from '@/db/migrator';
+import { seedCategories } from '@/db/schema';
 import { linkRoutes } from '@/link/routes';
 import { listRoutes } from '@/lists/routes';
 import { syncRoutes } from '@/sync/routes';
 
-export function buildApp(sqlite: Database.Database): FastifyInstance {
+export async function buildApp(
+  sqlite: Database.Database,
+): Promise<FastifyInstance> {
   const app = Fastify({ logger: false });
 
-  // Инициализируем схему БД (идемпотентно): создаём таблицы и засеиваем категории
-  initSchema(sqlite);
-
   // Оборачиваем в typesafe Kysely query builder, прокидываем в роуты
-  app.decorate('db', createDb(sqlite));
+  const db = createDb(sqlite);
+  app.decorate('db', db);
+
+  // Применяем ещё не применённые миграции (см. db/migrations/) и засеиваем
+  // категории — идемпотентно, безопасно на каждом старте
+  await migrateToLatest(db);
+  seedCategories(sqlite);
 
   // Устанавливаем zod-компиляторы для валидации и сериализации
   app.setValidatorCompiler(validatorCompiler);

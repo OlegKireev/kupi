@@ -6,7 +6,7 @@ import { buildApp } from '@/app';
 
 test('buildApp seeds the 9 preset categories', async () => {
   const sqlite = new Database(':memory:');
-  buildApp(sqlite);
+  await buildApp(sqlite);
 
   const row = sqlite.prepare('SELECT COUNT(*) AS n FROM categories').get() as {
     n: number;
@@ -21,10 +21,10 @@ test('buildApp seeds the 9 preset categories', async () => {
   assert.equal(other.name, 'Другое');
 });
 
-test('initSchema is idempotent (buildApp twice keeps 9 categories)', async () => {
+test('seedCategories is idempotent (buildApp twice keeps 9 categories)', async () => {
   const sqlite = new Database(':memory:');
-  buildApp(sqlite);
-  buildApp(sqlite);
+  await buildApp(sqlite);
+  await buildApp(sqlite);
 
   const row = sqlite.prepare('SELECT COUNT(*) AS n FROM categories').get() as {
     n: number;

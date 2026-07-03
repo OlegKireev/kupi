@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { makeApp, signup } from '@/shared/test-helpers';
 
 test('POST /accounts creates account, cookie, and a default list', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const { cookie, bootstrap } = await signup(app);
 
   // Проверяем, что получили куку аутентификации
@@ -21,7 +21,7 @@ test('POST /accounts creates account, cookie, and a default list', async () => {
 });
 
 test('two signups get isolated accounts and distinct lists', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const a = await signup(app);
   const b = await signup(app);
 
@@ -35,7 +35,7 @@ test('two signups get isolated accounts and distinct lists', async () => {
 });
 
 test('GET /categories requires auth and returns the preset', async () => {
-  const app = makeApp();
+  const app = await makeApp();
   const { cookie } = await signup(app);
 
   // Без куки: 401
