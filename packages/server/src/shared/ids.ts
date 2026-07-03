@@ -17,7 +17,7 @@ export function newCode(length = 6): string {
   const bytes = randomBytes(length);
   let result = '';
   for (let i = 0; i < length; i++) {
-    // На 32-символьном алфавите modulo-bias пренебрежимо мал
+    // 256 % 32 == 0 — на этом алфавите modulo-bias не приближённо мал, а нулевой
     result += ALPHABET[bytes[i]! % ALPHABET.length];
   }
   return result;
