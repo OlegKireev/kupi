@@ -6,8 +6,9 @@ import { createRoot } from 'react-dom/client';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 
-import { App } from '@/app/App';
-import '@/app/styles/globals.css';
+import { App } from './App';
+import { theme } from './theme/theme';
+import './styles/globals.css';
 
 // ponytail: dev-only self-heal — a service worker registered by an earlier
 // production preview on this same origin/port silently breaks every fetch
@@ -28,7 +29,7 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MantineProvider>
+    <MantineProvider theme={theme}>
       <Notifications />
       <App />
     </MantineProvider>
