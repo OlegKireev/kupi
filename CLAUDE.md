@@ -292,10 +292,9 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   → `Modal` + `TextInput` (device codes only — 6 chars) → a warning
   confirm-`Modal` ("заменит аккаунт этого устройства... текущие списки станут
   недоступны", recovery isn't implemented) → on confirm, `redeemLinkCode` then
-  `onAccountLinked(bootstrap)`; "QR-код (скоро)" — a disabled `Menu.Item`
-  reserving space for a not-yet-built QR flow (`QrCodeIcon`), out of scope for
-  now. `model/useAccountMenu.ts` owns this state (device-link half ported
-  unchanged from the old `useListSwitcher`/`useListMenu`).
+  `onAccountLinked(bootstrap)`. `model/useAccountMenu.ts` owns this state
+  (device-link half ported unchanged from the old
+  `useListSwitcher`/`useListMenu`).
   `onAccountLinked(bootstrap: Bootstrap) => Promise<void>` — piped down from
   `app/App.tsx` the same way `onSwitchList`/`onListsChanged` are — replaces
   `lists`/`categories`/`activeListId` wholesale from the `Bootstrap` the
@@ -339,15 +338,36 @@ other deferred piece — redeeming an invite/link code — is now built (see
 The original combined "⋮" `list-menu` slice from that work was later split
 into `list-switcher` (list-domain actions) and `account-menu` (device/account
 actions) — see `docs/superpowers/specs/2026-07-03-list-header-menu-redesign-design.md`.
-Deep links (`?code=...` auto-opening the modal) and QR codes for device
-linking are still out of scope — codes are copy-pasted by hand today — as is
-recovery for a device that gets orphaned by redeeming a link code onto a
-different account (`docs/backend-known-issues.md`). See
-`docs/client-known-issues.md` for review findings from that feature (an
+Deep links and QR codes for both invite/link codes are now built (see
+`docs/superpowers/specs/2026-07-03-qr-deeplink-sharing-design.md`):
+`shared/lib/deep-link.ts` (no `index.ts` barrel needed for `shared/lib/`,
+imported by its file path) exports `parseDeepLink`/`buildDeepLink`, reading/
+writing `?listCode=`/`?deviceCode=` query params from `window.location.origin`
+(no `API_BASE_URL`/production-domain config exists yet, see
+`shared/config/env.ts`). `App.tsx` parses `window.location.search` once on
+boot (same `useRef`-guard pattern as the bootstrap effect), stashes the result
+in `deepLink` state, and resets the URL via `window.history.replaceState`
+(the app has no other query params today, so this clears the whole query
+string rather than surgically removing one key). `deepLink` is threaded down
+as `initialListCode`/`initialDeviceCode` + `onDeepLinkConsumed` through
+`ListScreenPage`/`ListScreen` to `ListSwitcher`/`AccountMenu` — each hook
+(`useListSwitcher`/`useAccountMenu`) has its own `useRef`-guarded effect that,
+on a non-empty `initialCode`, pre-fills and opens the same modal manual entry
+would have opened, then calls `onDeepLinkConsumed()`. `shared/ui/CodeShareModal.tsx`
+(new dependency: `qrcode` + `@types/qrcode`, dev) is the first real
+composition in `shared/ui` (previously only Mantine/icon re-exports) — it
+replaces the two near-identical inline code-modals in `ListSwitcher`/
+`AccountMenu` with one component: QR image (`QRCode.toDataURL`) on top, the
+bare code as text below, "Копировать" (copies the full deep-link `url`, not
+the bare code — a deliberate change so the recipient can just tap the link),
+and "Поделиться" (`navigator.share`, rendered only when
+`typeof navigator.share === 'function'`). Recovery for a device that gets
+orphaned by redeeming a link code onto a different account is still not
+implemented (`docs/backend-known-issues.md`). See `docs/client-known-issues.md`
+for review findings from the header-menu-redesign feature (an
 `onAccountLinked` edge case) not worth fixing inline, and for the
 now-fixed stale-service-worker gotcha that used to produce misleading
-symptoms during manual
-browser QA in this dev environment.
+symptoms during manual browser QA in this dev environment.
 
 `steiger.config.ts` disables two rules from `@feature-sliced/steiger-plugin`'s
 `recommended` preset: `fsd/insignificant-slice` (every feature/widget here is
