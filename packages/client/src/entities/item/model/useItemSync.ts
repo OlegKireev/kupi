@@ -17,6 +17,7 @@ export function useItemSync(listId: string) {
   const cacheRef = useRef(cache);
   const flushingRef = useRef(false);
   const flushAgainRef = useRef(false);
+  const flushedListIdRef = useRef<string | null>(null);
 
   const update = (updater: (current: ListCache) => ListCache): void => {
     const next = updater(cacheRef.current);
@@ -76,6 +77,15 @@ export function useItemSync(listId: string) {
     const loaded = loadListCache(listId) ?? emptyCache();
     cacheRef.current = loaded;
     setCache(loaded);
+    // StrictMode в dev дважды подряд гоняет mount-эффект одного и того же
+    // инстанса (mount → cleanup → mount) — без гварда это дважды бьёт
+    // syncItems с одинаковыми параметрами. Гвардим по listId, а не булевым
+    // флагом на весь хук, чтобы реальное переключение списка всё ещё
+    // запускало flush.
+    if (flushedListIdRef.current === listId) {
+      return;
+    }
+    flushedListIdRef.current = listId;
     flush();
   }, [listId]);
 
