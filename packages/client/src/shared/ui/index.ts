@@ -20,7 +20,6 @@ export {
   CaretDownIcon,
   CheckIcon,
   CopyIcon,
-  DotsThreeVerticalIcon,
   KeyIcon,
   QrCodeIcon,
   TrashIcon,
