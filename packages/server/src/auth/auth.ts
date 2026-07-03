@@ -9,7 +9,7 @@ const MAX_AGE = 400 * 24 * 60 * 60; // 400 дней — cap Chrome для Max-Ag
 const cookieOpts = () =>
   ({
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: MAX_AGE,

@@ -14,6 +14,7 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    allowedHosts: ['gummier-hypervigilantly-evelin.ngrok-free.dev'],
   },
   plugins: [
     react(),
