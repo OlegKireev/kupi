@@ -25,3 +25,7 @@ export function loadListCache(listId: string): ListCache | null {
 export function saveListCache(listId: string, cache: ListCache): void {
   localStorage.setItem(key(listId), JSON.stringify(cache));
 }
+
+export function clearListCache(listId: string): void {
+  localStorage.removeItem(key(listId));
+}

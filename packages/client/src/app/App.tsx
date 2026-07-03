@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Bootstrap, Category, List } from '@kupi/shared';
 
 import { getCategories } from '@/entities/category';
+import { clearListCache } from '@/entities/item';
 import { createAccount, createList, getLists } from '@/entities/list';
 import { ListScreenPage } from '@/pages/list-screen';
 import { ApiError } from '@/shared/api';
@@ -78,8 +79,11 @@ export function App() {
   };
 
   // Редимпшн линк-кода меняет cookie этого устройства на другой аккаунт —
-  // сервер уже вернул полный bootstrap, второй round-trip не нужен.
+  // сервер уже вернул полный bootstrap, второй round-trip не нужен. Списки
+  // старого аккаунта больше не будут перечитаны, поэтому их localStorage-кеш
+  // (`kupi:list:<id>`) чистим здесь, иначе он остаётся в хранилище навсегда.
   const onAccountLinked = (bootstrap: Bootstrap): void => {
+    lists.forEach((l) => clearListCache(l.id));
     setLists(bootstrap.lists);
     setActiveListId(bootstrap.lists[0]?.id ?? null);
     setCategories(bootstrap.categories);

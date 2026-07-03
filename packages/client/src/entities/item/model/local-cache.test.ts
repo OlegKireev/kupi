@@ -1,7 +1,7 @@
 import { beforeEach, expect, test } from 'vitest';
 
 import type { ListCache } from './local-cache';
-import { loadListCache, saveListCache } from './local-cache';
+import { clearListCache, loadListCache, saveListCache } from './local-cache';
 
 beforeEach(() => {
   localStorage.clear();
@@ -26,5 +26,13 @@ test('caches for different lists do not collide', () => {
   saveListCache('list-1', { items: [], lastSeenSeq: 1, queue: [] });
   saveListCache('list-2', { items: [], lastSeenSeq: 2, queue: [] });
   expect(loadListCache('list-1')?.lastSeenSeq).toBe(1);
+  expect(loadListCache('list-2')?.lastSeenSeq).toBe(2);
+});
+
+test('clearListCache removes only the targeted list', () => {
+  saveListCache('list-1', { items: [], lastSeenSeq: 1, queue: [] });
+  saveListCache('list-2', { items: [], lastSeenSeq: 2, queue: [] });
+  clearListCache('list-1');
+  expect(loadListCache('list-1')).toBeNull();
   expect(loadListCache('list-2')?.lastSeenSeq).toBe(2);
 });
