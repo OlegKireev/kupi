@@ -3,23 +3,28 @@ import type { Bootstrap } from '@kupi/shared';
 import {
   ActionIcon,
   Button,
+  CodeShareModal,
   Menu,
   Modal,
   Text,
   TextInput,
-  CopyIcon,
   DevicesIcon,
   KeyIcon,
-  QrCodeIcon,
   UserCircleIcon,
 } from '@/shared/ui';
 import { useAccountMenu } from '../model/useAccountMenu';
 
 type Props = {
   onAccountLinked: (bootstrap: Bootstrap) => Promise<void>;
+  initialCode?: string;
+  onDeepLinkConsumed: () => void;
 };
 
-export function AccountMenu({ onAccountLinked }: Props) {
+export function AccountMenu({
+  onAccountLinked,
+  initialCode,
+  onDeepLinkConsumed,
+}: Props) {
   const {
     codeModal,
     closeCodeModal,
@@ -33,7 +38,7 @@ export function AccountMenu({ onAccountLinked }: Props) {
     pendingLinkCode,
     cancelLinkDevice,
     confirmLinkDevice,
-  } = useAccountMenu({ onAccountLinked });
+  } = useAccountMenu({ onAccountLinked, initialCode, onDeepLinkConsumed });
 
   return (
     <>
@@ -59,36 +64,16 @@ export function AccountMenu({ onAccountLinked }: Props) {
           >
             Ввести код устройства
           </Menu.Item>
-          <Menu.Item
-            disabled
-            leftSection={<QrCodeIcon size={16} />}
-          >
-            QR-код (скоро)
-          </Menu.Item>
         </Menu.Dropdown>
       </Menu>
 
-      <Modal
+      <CodeShareModal
         opened={codeModal !== null}
         onClose={closeCodeModal}
-        title={codeModal?.title}
-      >
-        <Text
-          size="xl"
-          fw={700}
-          ta="center"
-        >
-          {codeModal?.code}
-        </Text>
-        <Button
-          mt="md"
-          fullWidth
-          leftSection={<CopyIcon size={16} />}
-          onClick={() => navigator.clipboard.writeText(codeModal?.code ?? '')}
-        >
-          Копировать
-        </Button>
-      </Modal>
+        title={codeModal?.title ?? ''}
+        url={codeModal?.url ?? ''}
+        code={codeModal?.code ?? ''}
+      />
 
       <Modal
         opened={deviceCodeOpen}

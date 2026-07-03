@@ -21,9 +21,7 @@ export { CodeShareModal } from './CodeShareModal';
 export {
   CaretDownIcon,
   CheckIcon,
-  CopyIcon,
   KeyIcon,
-  QrCodeIcon,
   TrashIcon,
   UserCircleIcon,
   UserPlusIcon,
