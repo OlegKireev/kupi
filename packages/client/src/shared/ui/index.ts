@@ -18,10 +18,13 @@ export {
 export { notifications } from '@mantine/notifications';
 export {
   CaretDownIcon,
+  CheckIcon,
   CopyIcon,
   DotsThreeVerticalIcon,
   KeyIcon,
+  QrCodeIcon,
   TrashIcon,
+  UserCircleIcon,
   UserPlusIcon,
   UsersFourIcon,
   DevicesIcon,
