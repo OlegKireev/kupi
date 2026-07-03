@@ -18,6 +18,9 @@ type Props = {
   onSwitchList: (id: string) => void;
   onListsChanged: (selectId?: string) => void;
   onAccountLinked: (bootstrap: Bootstrap) => Promise<void>;
+  initialListCode?: string;
+  initialDeviceCode?: string;
+  onDeepLinkConsumed: () => void;
 };
 
 export function ListScreen({
@@ -27,6 +30,9 @@ export function ListScreen({
   onSwitchList,
   onListsChanged,
   onAccountLinked,
+  initialListCode,
+  initialDeviceCode,
+  onDeepLinkConsumed,
 }: Props) {
   const { items, pendingCount, failedCount, applyChange } = useItemSync(
     list.id,
@@ -53,8 +59,14 @@ export function ListScreen({
           onListsChanged={onListsChanged}
           pendingCount={pendingCount}
           failedCount={failedCount}
+          initialCode={initialListCode}
+          onDeepLinkConsumed={onDeepLinkConsumed}
         />
-        <AccountMenu onAccountLinked={onAccountLinked} />
+        <AccountMenu
+          onAccountLinked={onAccountLinked}
+          initialCode={initialDeviceCode}
+          onDeepLinkConsumed={onDeepLinkConsumed}
+        />
       </Group>
       <AddItemInput applyChange={applyChange} />
       {sortedItems.length === 0 && (

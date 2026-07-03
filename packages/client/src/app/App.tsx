@@ -7,6 +7,7 @@ import { clearListCache } from '@/entities/item';
 import { createAccount, createList, getLists } from '@/entities/list';
 import { ListScreenPage } from '@/pages/list-screen';
 import { ApiError } from '@/shared/api';
+import { parseDeepLink, type DeepLink } from '@/shared/lib/deep-link';
 import {
   loadBootstrapCache,
   saveBootstrapCache,
@@ -16,7 +17,9 @@ export function App() {
   const [lists, setLists] = useState<List[]>([]);
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [deepLink, setDeepLink] = useState<DeepLink | null>(null);
   const bootstrapped = useRef(false);
+  const deepLinkParsed = useRef(false);
 
   useEffect(() => {
     if (bootstrapped.current) {
@@ -52,6 +55,23 @@ export function App() {
         throw err;
       }
     })();
+  }, []);
+
+  // Диплинк (?listCode=.../?deviceCode=...) читается один раз при старте —
+  // тот же useRef-guard, что и у bootstrap-эффекта, против двойного вызова
+  // в React StrictMode. URL сбрасывается целиком (других query-параметров у
+  // приложения сейчас нет), чтобы обновление страницы не открывало модалку
+  // повторно.
+  useEffect(() => {
+    if (deepLinkParsed.current) {
+      return;
+    }
+    deepLinkParsed.current = true;
+    const parsed = parseDeepLink(window.location.search);
+    if (parsed) {
+      setDeepLink(parsed);
+      window.history.replaceState(null, '', window.location.pathname);
+    }
   }, []);
 
   useEffect(() => {
@@ -111,6 +131,11 @@ export function App() {
       onSwitchList={setActiveListId}
       onListsChanged={refreshLists}
       onAccountLinked={onAccountLinked}
+      initialListCode={deepLink?.kind === 'list' ? deepLink.code : undefined}
+      initialDeviceCode={
+        deepLink?.kind === 'device' ? deepLink.code : undefined
+      }
+      onDeepLinkConsumed={() => setDeepLink(null)}
     />
   );
 }

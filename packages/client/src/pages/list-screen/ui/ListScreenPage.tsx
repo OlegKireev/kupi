@@ -9,6 +9,9 @@ type Props = {
   onSwitchList: (id: string) => void;
   onListsChanged: (selectId?: string) => void;
   onAccountLinked: (bootstrap: Bootstrap) => Promise<void>;
+  initialListCode?: string;
+  initialDeviceCode?: string;
+  onDeepLinkConsumed: () => void;
 };
 
 export function ListScreenPage({
@@ -18,6 +21,9 @@ export function ListScreenPage({
   onSwitchList,
   onListsChanged,
   onAccountLinked,
+  initialListCode,
+  initialDeviceCode,
+  onDeepLinkConsumed,
 }: Props) {
   return (
     <ListScreen
@@ -27,6 +33,9 @@ export function ListScreenPage({
       onSwitchList={onSwitchList}
       onListsChanged={onListsChanged}
       onAccountLinked={onAccountLinked}
+      initialListCode={initialListCode}
+      initialDeviceCode={initialDeviceCode}
+      onDeepLinkConsumed={onDeepLinkConsumed}
     />
   );
 }
