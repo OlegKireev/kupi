@@ -4,9 +4,9 @@ import type { Bootstrap, Category, List } from '@kupi/shared';
 
 import { CategoryIcon } from '@/entities/category';
 import { ItemRow, useItemSync } from '@/entities/item';
+import { AccountMenu } from '@/features/account-menu';
 import { AddItemInput } from '@/features/add-item';
 import { ItemEditor } from '@/features/edit-item';
-import { ListMenu } from '@/features/list-menu';
 import { ListSwitcher } from '@/features/list-switcher';
 import { useToggleItem } from '@/features/toggle-item';
 import { Group, List as ListComponent, Stack, Text } from '@/shared/ui';
@@ -51,14 +51,10 @@ export function ListScreen({
           lists={lists}
           onSwitchList={onSwitchList}
           onListsChanged={onListsChanged}
-          onAccountLinked={onAccountLinked}
-        />
-        <ListMenu
-          list={list}
-          onListsChanged={onListsChanged}
           pendingCount={pendingCount}
           failedCount={failedCount}
         />
+        <AccountMenu onAccountLinked={onAccountLinked} />
       </Group>
       <AddItemInput applyChange={applyChange} />
       {sortedItems.length === 0 && (
