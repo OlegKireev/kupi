@@ -5,6 +5,7 @@ export {
   Chip,
   Checkbox,
   InputLabel,
+  Flex,
   Group,
   List,
   Menu,
@@ -28,6 +29,6 @@ export {
   UsersFourIcon,
   DevicesIcon,
   TextboxIcon,
-  ListIcon,
+  DotsThreeVerticalIcon,
   FilePlusIcon,
 } from '@phosphor-icons/react';

@@ -4,6 +4,7 @@ import {
   ActionIcon,
   Button,
   Chip,
+  Flex,
   Group,
   Stack,
   Text,
@@ -57,27 +58,29 @@ export function ItemEditor({ item, categories, applyChange, onClose }: Props) {
         >
           Удалить
         </Button>
-        <Chip.Group
-          multiple={false}
-          value={item.categoryId}
-          onChange={(value) => setCategory(item, value)}
-        >
-          <Group gap="xs">
-            {categories.map((c) => (
-              <Chip
-                key={c.id}
-                value={c.id}
-                onClick={(event) => {
-                  if (event.currentTarget.value === item.categoryId) {
-                    setCategory(item, null);
-                  }
-                }}
-              >
-                {c.icon} {c.name}
-              </Chip>
-            ))}
-          </Group>
-        </Chip.Group>
+        <Flex flex="1 1 100%">
+          <Chip.Group
+            multiple={false}
+            value={item.categoryId}
+            onChange={(value) => setCategory(item, value)}
+          >
+            <Group gap="xs">
+              {categories.map((c) => (
+                <Chip
+                  key={c.id}
+                  value={c.id}
+                  onClick={(event) => {
+                    if (event.currentTarget.value === item.categoryId) {
+                      setCategory(item, null);
+                    }
+                  }}
+                >
+                  {c.icon} {c.name}
+                </Chip>
+              ))}
+            </Group>
+          </Chip.Group>
+        </Flex>
       </Group>
     </Stack>
   );

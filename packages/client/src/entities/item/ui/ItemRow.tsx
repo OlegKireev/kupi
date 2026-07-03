@@ -7,7 +7,7 @@ import {
   Checkbox,
   Group,
   InputLabel,
-  ListIcon,
+  DotsThreeVerticalIcon,
   Stack,
   Text,
 } from '@/shared/ui';
@@ -55,11 +55,11 @@ export function ItemRow({
         {categoryIcon}
         <ActionIcon
           ml="auto"
-          variant="gradient"
+          variant="subtle"
           aria-label={`Редактировать ${item.name}`}
           onClick={onOpen}
         >
-          <ListIcon />
+          <DotsThreeVerticalIcon />
         </ActionIcon>
       </Group>
       {editor}
