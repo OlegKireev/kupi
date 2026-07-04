@@ -8,7 +8,7 @@ import {
   SyncRequestSchema,
 } from '@kupi/shared';
 
-import { findListById, isMember } from '@/lists/repository';
+import { findListByIdOrThrow, isMember } from '@/lists/repository';
 import { normalizeName } from '@/shared/ids';
 import { applyChange } from '@/sync/merge';
 import { findItemsSince, findSuggestions } from '@/sync/repository';
@@ -39,12 +39,12 @@ export function syncRoutes(app: FastifyInstance): void {
         }
       });
 
-      const list = await findListById(app.db, listId);
+      const list = await findListByIdOrThrow(app.db, listId);
 
       // Дельта-pull: всё с version > lastSeenSeq, включая tombstones
       const items = await findItemsSince(app.db, listId, lastSeenSeq);
 
-      const body: SyncResponse = { seq: list!.seq, items };
+      const body: SyncResponse = { seq: list.seq, items };
       return body;
     },
   );
@@ -59,7 +59,9 @@ export function syncRoutes(app: FastifyInstance): void {
     { schema: { querystring: SuggestQuerySchema } },
     async (req) => {
       const query = normalizeName(req.query.q ?? '');
-      if (!query) return [] as Suggestion[];
+      if (!query) {
+        return [] as Suggestion[];
+      }
       return findSuggestions(app.db, req.accountId, query);
     },
   );
