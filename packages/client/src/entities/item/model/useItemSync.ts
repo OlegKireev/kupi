@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ItemChange } from '@kupi/shared';
 
@@ -19,14 +19,17 @@ export function useItemSync(listId: string) {
   const flushAgainRef = useRef(false);
   const flushedListIdRef = useRef<string | null>(null);
 
-  const update = (updater: (current: ListCache) => ListCache): void => {
-    const next = updater(cacheRef.current);
-    cacheRef.current = next;
-    saveListCache(listId, next);
-    setCache(next);
-  };
+  const update = useCallback(
+    (updater: (current: ListCache) => ListCache): void => {
+      const next = updater(cacheRef.current);
+      cacheRef.current = next;
+      saveListCache(listId, next);
+      setCache(next);
+    },
+    [listId],
+  );
 
-  const flush = async (): Promise<void> => {
+  const flush = useCallback(async (): Promise<void> => {
     if (flushingRef.current) {
       // flush уже летит в сеть — не бросаем этот вызов, а просим текущий
       // перезапуститься по завершении, иначе изменения, добавленные во
@@ -71,7 +74,7 @@ export function useItemSync(listId: string) {
         flush();
       }
     }
-  };
+  }, [listId, update]);
 
   useEffect(() => {
     const loaded = loadListCache(listId) ?? emptyCache();
@@ -87,12 +90,12 @@ export function useItemSync(listId: string) {
     }
     flushedListIdRef.current = listId;
     flush();
-  }, [listId]);
+  }, [listId, flush]);
 
   useEffect(() => {
     window.addEventListener('online', flush);
     return () => window.removeEventListener('online', flush);
-  }, [listId]);
+  }, [flush]);
 
   const applyChange = (change: ItemChange): void => {
     update((current) => ({
