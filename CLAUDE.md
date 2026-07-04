@@ -134,7 +134,25 @@ PRIMARY KEY` isn't implicitly `NOT NULL` the way Postgres's is, so every
 - **`lists/`** — list CRUD, invites, and membership. `repository.ts` owns
   `lists`, `list_members`, `list_invites`, including access control
   (`isMember`/`isOwner`, checked per-route; non-members get `404` not `403` to
-  avoid leaking list existence).
+  avoid leaking list existence). The `List` wire type (`@kupi/shared`) carries
+  a `role: 'owner' | 'member'` field — the caller's own role in that list, not
+  an intrinsic property of the list — so it only exists on responses computed
+  relative to `req.accountId`. `findListsForAccount` (backs `GET /api/lists`
+  and `buildBootstrap`) joins `list_members.role` directly; `findListById`
+  (a plain by-id lookup with no account context) deliberately returns
+  `Omit<List, 'role'>`, and its three callers (create/rename/join) attach
+  `role` themselves since each already knows it locally. `PATCH /lists/:id`
+  (rename) is owner-only too (`isOwner`, not `isMember` — a plain member
+  can no longer rename); `DELETE /lists/:id` stays open to any member, since
+  it's the one route where non-owner access is the point (owner deletes the
+  list outright, a member just leaves it — same endpoint, branching only in
+  which repository call runs). On the client, `features/list-switcher` uses
+  `list.role === 'owner'` to hide "Пригласить в список" and "Переименовать
+  список" for non-owners — the routes themselves already 404 non-owners, this
+  just avoids a dead-end click for a member who can't tell from the UI that
+  they aren't the owner. The delete/leave item and its confirm modal instead
+  stay visible for everyone but relabel by role ("Удалить список" /
+  "Покинуть список"), matching the two real outcomes of that one endpoint.
 - **`sync/`** — clients push a batch of `ItemChange`s to `POST
 /api/lists/:id/sync` with `lastSeenSeq`, applied atomically in one Kysely
   transaction via `merge.ts`'s `applyChange`. Semantics:
@@ -376,6 +394,16 @@ smell) and `fsd/repetitive-naming` (the `*-item` feature names are the
 clearest domain vocabulary available, the rule only sees the repeated word).
 
 Design/planning docs live under `docs/superpowers/` (specs and plans); they capture the reasoning behind the current schema and protocol in more depth than inline comments do.
+
+## Verification
+
+Before considering any change done, run `pnpm test:e2e` as the final check —
+after `pnpm test`/`pnpm lint` pass, not instead of them. Unit tests don't
+catch UI-copy/selector drift (e.g. a Mantine menu-item label changing text
+breaks a Playwright locator, not a unit test) or cross-device sync
+behavior; e2e is the only suite exercising the real client against a real
+server end to end. Applies to every change that touches client or server
+code, not just ones that look UI-related.
 
 ## Git workflow
 

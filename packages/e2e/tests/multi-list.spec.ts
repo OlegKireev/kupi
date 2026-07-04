@@ -32,9 +32,9 @@ test('create a list, switch between lists, rename, then delete back to another e
   await expect(page.getByRole('button', { name: 'Дача 2.0' })).toBeVisible();
 
   await openListSwitcher(page, 'Дача 2.0');
-  await page.getByRole('menuitem', { name: 'Удалить/покинуть список' }).click();
+  await page.getByRole('menuitem', { name: 'Удалить список' }).click();
   const deleteDialog = page.getByRole('dialog', {
-    name: 'Удалить/покинуть список?',
+    name: 'Удалить список?',
   });
   await deleteDialog.getByRole('button', { name: 'Подтвердить' }).click();
 
@@ -49,9 +49,9 @@ test('deleting the last remaining list falls back to a fresh default list', asyn
   await expect(page.getByRole('button', { name: 'Мои покупки' })).toBeVisible();
 
   await openListSwitcher(page, 'Мои покупки');
-  await page.getByRole('menuitem', { name: 'Удалить/покинуть список' }).click();
+  await page.getByRole('menuitem', { name: 'Удалить список' }).click();
   await page
-    .getByRole('dialog', { name: 'Удалить/покинуть список?' })
+    .getByRole('dialog', { name: 'Удалить список?' })
     .getByRole('button', { name: 'Подтвердить' })
     .click();
 

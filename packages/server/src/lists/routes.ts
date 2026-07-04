@@ -1,13 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 
-import type { List } from '@kupi/shared';
+import type { List, ListRole } from '@kupi/shared';
 import { CodeBodySchema, ListParamsSchema, NameBodySchema } from '@kupi/shared';
 
 import {
   countListMembers,
   deleteList,
-  findListById,
+  findListByIdOrThrow,
   findListInviteByCode,
   findListsForAccount,
   insertList,
@@ -22,6 +22,12 @@ import { newCode, newId } from '@/shared/ids';
 
 // TTL приглашения — 7 дней в миллисекундах
 const INVITE_TTL = 7 * 24 * 60 * 60 * 1000;
+
+// Роль вызывающего в списке — не хранится на самом List, считаем от
+// ownerAccountId, а не дублируем результат уже пройденной проверки
+// isOwner/isMember (те могли устареть к моменту ответа).
+const roleFor = (list: { ownerAccountId: string }, accountId: string): ListRole =>
+  list.ownerAccountId === accountId ? 'owner' : 'member';
 
 export function listRoutes(app: FastifyInstance): void {
   const typedApp = app.withTypeProvider<ZodTypeProvider>();
@@ -52,20 +58,22 @@ export function listRoutes(app: FastifyInstance): void {
         });
       });
       reply.code(201);
-      return findListById(app.db, id);
+      const list = await findListByIdOrThrow(app.db, id);
+      return { ...list, role: roleFor(list, req.accountId) };
     },
   );
 
-  // PATCH /lists/:id — обновляет имя списка (только для членов, 404 для не-членов)
+  // PATCH /lists/:id — обновляет имя списка (только для владельца, 404 иначе)
   typedApp.patch(
     '/lists/:id',
     { schema: { params: ListParamsSchema, body: NameBodySchema } },
     async (req, reply) => {
-      if (!(await isMember(app.db, req.params.id, req.accountId))) {
+      if (!(await isOwner(app.db, req.params.id, req.accountId))) {
         return reply.code(404).send({ error: 'not_found' });
       }
       await updateListName(app.db, req.params.id, req.body.name);
-      return findListById(app.db, req.params.id);
+      const list = await findListByIdOrThrow(app.db, req.params.id);
+      return { ...list, role: roleFor(list, req.accountId) };
     },
   );
 
@@ -101,7 +109,8 @@ export function listRoutes(app: FastifyInstance): void {
         accountId: req.accountId,
         role: 'member',
       });
-      return findListById(app.db, invite.listId);
+      const list = await findListByIdOrThrow(app.db, invite.listId);
+      return { ...list, role: roleFor(list, req.accountId) };
     },
   );
 

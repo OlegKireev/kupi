@@ -129,10 +129,10 @@ test('a list deleted by its owner disappears for a member on next sync, falling 
 
   await openListSwitcher(owner, 'Мои покупки');
   await owner
-    .getByRole('menuitem', { name: 'Удалить/покинуть список' })
+    .getByRole('menuitem', { name: 'Удалить список' })
     .click();
   await owner
-    .getByRole('dialog', { name: 'Удалить/покинуть список?' })
+    .getByRole('dialog', { name: 'Удалить список?' })
     .getByRole('button', { name: 'Подтвердить' })
     .click();
 

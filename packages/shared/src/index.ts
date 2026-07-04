@@ -30,6 +30,7 @@ export const ListSchema = z.object({
   ownerAccountId: z.string(),
   seq: z.number(),
   createdAt: z.number(),
+  role: ListRoleSchema,
 });
 export type List = z.infer<typeof ListSchema>;
 

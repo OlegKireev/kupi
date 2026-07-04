@@ -50,8 +50,44 @@ test('owner invites, second account joins and gains access', async () => {
     })
   ).json() as List[];
   assert.ok(guestLists.some((l) => l.id === listId));
+  assert.equal(
+    guestLists.find((l) => l.id === listId)?.role,
+    'member',
+  );
+
+  const ownerLists = (
+    await app.inject({
+      method: 'GET',
+      url: '/api/lists',
+      headers: { cookie: owner.cookie },
+    })
+  ).json() as List[];
+  assert.equal(ownerLists.find((l) => l.id === listId)?.role, 'owner');
 
   await app.close();
+});
+
+test('owner redeeming their own invite code stays owner, not demoted to member', async () => {
+  const app = await makeApp();
+  const owner = await signup(app);
+  const listId = owner.bootstrap.lists[0]!.id;
+
+  const { code } = (
+    await app.inject({
+      method: 'POST',
+      url: `/api/lists/${listId}/invites`,
+      headers: { cookie: owner.cookie },
+    })
+  ).json() as { code: string };
+
+  const joinRes = await app.inject({
+    method: 'POST',
+    url: '/api/lists/join',
+    headers: { cookie: owner.cookie },
+    payload: { code },
+  });
+  assert.equal(joinRes.statusCode, 200);
+  assert.equal((joinRes.json() as List).role, 'owner');
 });
 
 test('non-member cannot rename or invite (isolation, 404)', async () => {
@@ -74,6 +110,37 @@ test('non-member cannot rename or invite (isolation, 404)', async () => {
     headers: { cookie: outsider.cookie },
   });
   assert.equal(invite.statusCode, 404);
+
+  await app.close();
+});
+
+test('member (non-owner) cannot rename the list (owner-only, 404)', async () => {
+  const app = await makeApp();
+  const owner = await signup(app);
+  const guest = await signup(app);
+  const listId = owner.bootstrap.lists[0]!.id;
+
+  const { code } = (
+    await app.inject({
+      method: 'POST',
+      url: `/api/lists/${listId}/invites`,
+      headers: { cookie: owner.cookie },
+    })
+  ).json() as { code: string };
+  await app.inject({
+    method: 'POST',
+    url: '/api/lists/join',
+    headers: { cookie: guest.cookie },
+    payload: { code },
+  });
+
+  const rename = await app.inject({
+    method: 'PATCH',
+    url: `/api/lists/${listId}`,
+    headers: { cookie: guest.cookie },
+    payload: { name: 'переименовал бы, но не владелец' },
+  });
+  assert.equal(rename.statusCode, 404);
 
   await app.close();
 });

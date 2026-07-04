@@ -1,4 +1,5 @@
 import type { List } from '@kupi/shared';
+import { ListRoleSchema } from '@kupi/shared';
 
 import type { Db } from '@/db/connection';
 
@@ -7,25 +8,43 @@ export async function findListsForAccount(
   db: Db,
   accountId: string,
 ): Promise<List[]> {
-  return db
+  const rows = await db
     .selectFrom('lists')
     .innerJoin('listMembers', 'listMembers.listId', 'lists.id')
     .selectAll('lists')
+    .select('listMembers.role')
     .where('listMembers.accountId', '=', accountId)
     .orderBy('lists.createdAt')
     .execute();
+  return rows.map((row) => ({ ...row, role: ListRoleSchema.parse(row.role) }));
 }
 
-/** Резолвит список по id. */
+/** Резолвит список по id (без роли — та существует только относительно аккаунта). */
 export async function findListById(
   db: Db,
   listId: string,
-): Promise<List | undefined> {
+): Promise<Omit<List, 'role'> | undefined> {
   return db
     .selectFrom('lists')
     .selectAll()
     .where('id', '=', listId)
     .executeTakeFirst();
+}
+
+/**
+ * Резолвит список по id, когда его существование уже гарантировано
+ * вызывающим кодом (сразу после insert/update в той же обработке запроса) —
+ * бросает вместо того, чтобы молча возвращать undefined.
+ */
+export async function findListByIdOrThrow(
+  db: Db,
+  listId: string,
+): Promise<Omit<List, 'role'>> {
+  return db
+    .selectFrom('lists')
+    .selectAll()
+    .where('id', '=', listId)
+    .executeTakeFirstOrThrow();
 }
 
 /** Создаёт новый список. */

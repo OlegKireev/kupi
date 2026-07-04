@@ -81,6 +81,8 @@ export function ListSwitcher({
     onDeepLinkConsumed,
   });
 
+  const isOwner = list.role === 'owner';
+
   return (
     <>
       <Menu onOpen={loadMemberCount}>
@@ -105,35 +107,42 @@ export function ListSwitcher({
         </Menu.Target>
         <Menu.Dropdown>
           <Menu.Label>{syncStatusText}</Menu.Label>
-          <Menu.Item
-            leftSection={<UserPlusIcon size={16} />}
-            onClick={openInvite}
-          >
-            Пригласить в список
-          </Menu.Item>
+          {isOwner && (
+            <Menu.Item
+              leftSection={<UserPlusIcon size={16} />}
+              onClick={openInvite}
+            >
+              Пригласить в список
+            </Menu.Item>
+          )}
           <Menu.Item
             disabled
             leftSection={<UsersFourIcon size={16} />}
           >
             Участники ({memberCount ?? '…'})
           </Menu.Item>
-          <Menu.Item
-            leftSection={<TextboxIcon size={16} />}
-            onClick={openRename}
-          >
-            Переименовать список
-          </Menu.Item>
+          {isOwner && (
+            <Menu.Item
+              leftSection={<TextboxIcon size={16} />}
+              onClick={openRename}
+            >
+              Переименовать список
+            </Menu.Item>
+          )}
           <Menu.Item
             color="red"
             leftSection={<TrashIcon size={16} />}
             onClick={openConfirmDelete}
           >
-            Удалить/покинуть список
+            {isOwner ? 'Удалить список' : 'Покинуть список'}
           </Menu.Item>
           <Menu.Divider />
           {lists.map((l) => (
             <Menu.Item
               key={l.id}
+              leftSection={
+                l.role === 'member' ? <UsersFourIcon size={14} /> : undefined
+              }
               rightSection={l.id === list.id ? <CheckIcon size={16} /> : null}
               onClick={() => onSwitchList(l.id)}
             >
@@ -186,11 +195,12 @@ export function ListSwitcher({
       <Modal
         opened={confirmDeleteOpen}
         onClose={closeConfirmDelete}
-        title="Удалить/покинуть список?"
+        title={isOwner ? 'Удалить список?' : 'Покинуть список?'}
       >
         <Text>
-          Если вы владелец — список удалится для всех участников. Если вы
-          участник — вы просто выйдете из него.
+          {isOwner
+            ? 'Список удалится для всех участников.'
+            : 'Вы выйдете из списка, для остальных участников он останется.'}
         </Text>
         <Button
           mt="md"
