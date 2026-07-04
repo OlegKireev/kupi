@@ -40,7 +40,9 @@ export function registerAuth(app: FastifyInstance): void {
   app.addHook('onRequest', async (req, reply) => {
     // Пропускаем публичные пути
     const path = req.url.split('?')[0] ?? req.url;
-    if (PUBLIC.has(path)) return;
+    if (PUBLIC.has(path)) {
+      return;
+    }
 
     // Резолвим device-токен из cookie
     const token = req.cookies[COOKIE];
@@ -57,7 +59,9 @@ export function registerAuth(app: FastifyInstance): void {
   app.addHook('onSend', async (req, reply, payload) => {
     if (req.accountId && reply.statusCode >= 200 && reply.statusCode < 300) {
       const token = req.cookies[COOKIE];
-      if (token) setAuthCookie(reply, token);
+      if (token) {
+        setAuthCookie(reply, token);
+      }
     }
     return payload;
   });

@@ -122,7 +122,9 @@ export async function incrementFrequency(
   name: string,
 ): Promise<void> {
   const normalizedName = normalizeName(name);
-  if (!normalizedName) return;
+  if (!normalizedName) {
+    return;
+  }
   await db
     .insertInto('itemFrequency')
     .values({ accountId, normalizedName, count: 1 })

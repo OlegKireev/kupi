@@ -37,12 +37,16 @@ export async function applyChange(
 ): Promise<void> {
   // Идемпотентность: повторная доставка одного clientOpId не применяется дважды
   const isNewOp = await insertAppliedOp(db, listId, change.clientOpId);
-  if (!isNewOp) return;
+  if (!isNewOp) {
+    return;
+  }
 
   const existingItem = await findItemById(db, listId, change.itemId);
 
   // Remove-wins: tombstone не воскрешаем правкой
-  if (existingItem && existingItem.deleted && change.op !== 'delete') return;
+  if (existingItem && existingItem.deleted && change.op !== 'delete') {
+    return;
+  }
 
   const seq = await incrementListSeq(db, listId);
   const now = Date.now();
@@ -84,9 +88,17 @@ export async function applyChange(
   // Патч: обновляем только присланные поля — конкурентные правки разных полей
   // обе выживают; конкурентные правки одного поля выигрывает последняя дошедшая до сервера.
   const patch: Updateable<Items> = { version: seq, updatedAt: now };
-  if (fields.name !== undefined) patch.name = fields.name;
-  if (fields.quantity !== undefined) patch.quantity = fields.quantity;
-  if (fields.categoryId !== undefined) patch.categoryId = fields.categoryId;
-  if (fields.checked !== undefined) patch.checked = fields.checked ? 1 : 0;
+  if (fields.name !== undefined) {
+    patch.name = fields.name;
+  }
+  if (fields.quantity !== undefined) {
+    patch.quantity = fields.quantity;
+  }
+  if (fields.categoryId !== undefined) {
+    patch.categoryId = fields.categoryId;
+  }
+  if (fields.checked !== undefined) {
+    patch.checked = fields.checked ? 1 : 0;
+  }
   await patchItem(db, listId, change.itemId, patch);
 }
