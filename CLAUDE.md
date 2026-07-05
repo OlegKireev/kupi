@@ -323,7 +323,16 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   shape (`Modal` + one `TextInput` + submit `Button`) apart from copy and
   icon — collapsed into one `ui/TextPromptModal.tsx`, and the delete/leave
   confirm modal into `ui/DeleteConfirmModal.tsx`; `ListSwitcher` itself is
-  just composition now.
+  just composition now. `ui/MenuTrigger.tsx` (the clickable list title) is
+  `Menu.Target`'s child — Mantine clones that child and injects
+  `onClick`/`aria-*`/`ref` onto it, so the component must spread them onto
+  the real `<button>`. A version of this component that only read
+  `{ children }` and dropped every other prop shipped for a while: the menu
+  silently stopped opening for real users (nothing calls the injected
+  `onClick`), caught only when `pnpm test:e2e` started failing on every
+  sharing/multi-list test that opens the switcher. Fixed by accepting
+  `ComponentPropsWithRef<'button'>` and spreading `...props` (React 19 passes
+  `ref` as a plain prop, no `forwardRef` needed).
   `model/code-kind.ts` is deleted along with it — device link codes are
   entered exclusively through `account-menu` now, so there's no code input
   left that needs to guess its type by length. `400 invalid_code` surfaces as

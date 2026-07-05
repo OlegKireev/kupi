@@ -61,6 +61,7 @@ export default defineConfig({
     'react/jsx-filename-extension': ['error', { extensions: ['jsx', 'tsx'] }],
     'react/jsx-max-depth': ['error', { max: 4 }],
     'react/jsx-no-literals': 'off',
+    'react/jsx-props-no-spreading': 'off',
     'react/react-in-jsx-scope': 'off',
     'sort-imports': ['off', { ignoreCase: true }],
     'sort-keys': 'warn',
