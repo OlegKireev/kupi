@@ -25,3 +25,13 @@ export function markAttempted(queue: QueuedChange[]): QueuedChange[] {
     };
   });
 }
+
+/** После сетевой ошибки уже упавшие правки остаются failed как есть,
+ * остальные получают ещё одну попытку (см. markAttempted). */
+export function requeueAfterError(queue: QueuedChange[]): QueuedChange[] {
+  const failed = queue.filter((queueChange) => queueChange.failed);
+  const attempted = markAttempted(
+    queue.filter((queueChange) => !queueChange.failed),
+  );
+  return [...failed, ...attempted];
+}

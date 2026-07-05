@@ -249,13 +249,25 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   a queue (`model/queue.ts`); a flush is one `syncItems` batch call, which
   doubles as the diff-sync (the existing `mergeItems` reconciliation is
   exactly the "compare cache to server" step, nothing extra needed). Flush
-  triggers: mount and the `online` window event. Retry policy: a network
-  error (not `ApiError`) leaves the queue untouched for the next `online`;
-  an `ApiError` (server rejected — e.g. the list was deleted while offline)
-  increments `attempts` on every queued change, marking it `failed` after 3
-  attempts (no auto-retry after that, no manual-retry UI yet). `clientOpId`
-  stays fixed across retries — safe because `sync`'s `applied_ops` dedup
-  (see `sync/` below) makes replays idempotent.
+  triggers: mount and the `online` window event — one merged effect, since
+  both ultimately just call `flush()` for the current list (the mount side
+  still needs its own `flushedListIdRef` guard against React StrictMode's
+  double-invoke). The actual network call + response handling lives in a
+  free function, `runFlush` (same file, not a hook — it only needs
+  `listId`/`cache`/`update`), so the `flush` `useCallback` itself is just
+  the in-flight guard around it; `oxlint`'s `max-statements` is what forced
+  this split out of what used to be one large callback. Merging a sync
+  response into the cache is `model/apply-sync-response.ts`'s
+  `applySyncResponse` (items via `mergeItems`, `lastSeenSeq`, and dropping
+  from the queue only the entries that were actually sent — added between
+  request and response don't get lost). Retry policy: a network error (not
+  `ApiError`) leaves the queue untouched for the next `online`; an
+  `ApiError` (server rejected — e.g. the list was deleted while offline)
+  goes through `model/queue.ts`'s `requeueAfterError`, which increments
+  `attempts` on every queued change via `markAttempted`, marking it
+  `failed` after 3 attempts (no auto-retry after that, no manual-retry UI
+  yet). `clientOpId` stays fixed across retries — safe because `sync`'s
+  `applied_ops` dedup (see `sync/` below) makes replays idempotent.
 
 - **`features/`** — `toggle-item` (flip `checked`), `edit-item` (quantity
   stepper, category chips, delete — bundled as one slice since it's one UX
