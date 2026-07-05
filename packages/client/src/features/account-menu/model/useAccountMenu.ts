@@ -18,15 +18,53 @@ type CodeModalState = { title: string; code: string; url: string } | null;
 
 const INVALID_CODE_MESSAGE = 'Неверный код';
 
+/** 400 от /link — введённый код неверный/просрочен, возвращаем на экран
+ * ввода с тостом; любая другая ошибка — не наш случай, пробрасываем. */
+function handleLinkError(err: unknown, onInvalidCode: () => void): void {
+  if (!(err instanceof ApiError) || err.status !== 400) {
+    throw err;
+  }
+  onInvalidCode();
+}
+
+/** Состояние экрана ручного ввода кода устройства — вынесено отдельно,
+ * чтобы useAccountMenu укладывался в max-statements. */
+function useDeviceCodeInput(onSubmit: (code: string) => void) {
+  const [deviceCodeOpen, setDeviceCodeOpen] = useState(false);
+  const [deviceCodeValue, setDeviceCodeValue] = useState('');
+
+  const openDeviceCode = (): void => {
+    setDeviceCodeValue('');
+    setDeviceCodeOpen(true);
+  };
+  const closeDeviceCode = (): void => setDeviceCodeOpen(false);
+  // Возврат к экрану ввода из предупреждающей модалки (cancelLinkDevice) —
+  // в отличие от openDeviceCode, не должен сбрасывать уже введённый код.
+  const reopenDeviceCode = (): void => setDeviceCodeOpen(true);
+  const submitDeviceCode = (): void => {
+    onSubmit(deviceCodeValue);
+    setDeviceCodeOpen(false);
+  };
+
+  return {
+    closeDeviceCode,
+    deviceCodeOpen,
+    deviceCodeValue,
+    openDeviceCode,
+    reopenDeviceCode,
+    setDeviceCodeValue,
+    submitDeviceCode,
+  };
+}
+
 export function useAccountMenu({
   onAccountLinked,
   initialCode,
   onDeepLinkConsumed,
 }: Params) {
   const [codeModal, setCodeModal] = useState<CodeModalState>(null);
-  const [deviceCodeOpen, setDeviceCodeOpen] = useState(false);
-  const [deviceCodeValue, setDeviceCodeValue] = useState('');
   const [pendingLinkCode, setPendingLinkCode] = useState<string | null>(null);
+  const deviceCode = useDeviceCodeInput(setPendingLinkCode);
 
   // Диплинк (?deviceCode=...) пропускает шаг ручного ввода и сразу
   // открывает предупреждающую модалку — та же логика, что и после
@@ -52,20 +90,9 @@ export function useAccountMenu({
 
   const closeCodeModal = (): void => setCodeModal(null);
 
-  const openDeviceCode = (): void => {
-    setDeviceCodeValue('');
-    setDeviceCodeOpen(true);
-  };
-  const closeDeviceCode = (): void => setDeviceCodeOpen(false);
-
-  const submitDeviceCode = (): void => {
-    setPendingLinkCode(deviceCodeValue);
-    setDeviceCodeOpen(false);
-  };
-
   const cancelLinkDevice = (): void => {
     setPendingLinkCode(null);
-    setDeviceCodeOpen(true);
+    deviceCode.reopenDeviceCode();
   };
 
   const confirmLinkDevice = async (): Promise<void> => {
@@ -78,28 +105,21 @@ export function useAccountMenu({
       setPendingLinkCode(null);
       await onAccountLinked(bootstrap);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 400) {
+      handleLinkError(err, () => {
         setPendingLinkCode(null);
-        setDeviceCodeOpen(true);
+        deviceCode.reopenDeviceCode();
         notifications.show({ color: 'red', message: INVALID_CODE_MESSAGE });
-        return;
-      }
-      throw err;
+      });
     }
   };
 
   return {
     cancelLinkDevice,
     closeCodeModal,
-    closeDeviceCode,
     codeModal,
     confirmLinkDevice,
-    deviceCodeOpen,
-    deviceCodeValue,
-    openDeviceCode,
     openLinkDevice,
     pendingLinkCode,
-    setDeviceCodeValue,
-    submitDeviceCode,
+    ...deviceCode,
   };
 }

@@ -324,7 +324,14 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   недоступны", recovery isn't implemented) → on confirm, `redeemLinkCode` then
   `onAccountLinked(bootstrap)`. `model/useAccountMenu.ts` owns this state
   (device-link half ported unchanged from the old
-  `useListSwitcher`/`useListMenu`).
+  `useListSwitcher`/`useListMenu`). The device-code-entry fields
+  (`deviceCodeOpen`/`deviceCodeValue`/open/close/submit) live in a private
+  `useDeviceCodeInput` hook in the same file, spread into
+  `useAccountMenu`'s return — split out purely to fit `oxlint`'s
+  `max-statements`, not a reusable abstraction (nothing else calls it).
+  Same reasoning for `handleLinkError`, which pulls the shared "was this a
+  400 invalid-code, or something to rethrow" branch out of
+  `confirmLinkDevice`.
   `onAccountLinked(bootstrap: Bootstrap) => Promise<void>` — piped down from
   `app/App.tsx` the same way `onSwitchList`/`onListsChanged` are — replaces
   `lists`/`categories`/`activeListId` wholesale from the `Bootstrap` the
