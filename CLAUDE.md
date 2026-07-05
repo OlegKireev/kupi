@@ -357,7 +357,14 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
 - **`pages/list-screen`** + **`app/App.tsx`** — bootstrap flow: `GET /api/lists` +
   `GET /api/categories` in parallel; a `401` (brand-new device, no `kupi_dt`
   cookie yet) falls back to `POST /api/accounts`, which creates the
-  account/device/first-list and returns the full `Bootstrap` in one call. The
+  account/device/first-list and returns the full `Bootstrap` in one call. All
+  of this — `lists`/`activeListId`/`categories` state, the bootstrap effect,
+  and the mutation helpers below — lives in `app/model/useAppLists.ts`, not
+  `App.tsx` itself (split out purely to fit `oxlint`'s `max-statements`;
+  `App.tsx` just calls the hook and renders `ListScreenPage`). The actual
+  network/fallback logic is a plain async function, `loadInitialBootstrap`
+  (not a hook — called once from the bootstrap effect), with the
+  network-error branch further split into `loadCachedBootstrapOrThrow`. The
   bootstrap effect is guarded with a `useRef` flag against React
   `StrictMode`'s dev-mode double-invoke, which would otherwise call
   `POST /api/accounts` twice on a fresh device and create two accounts.
@@ -399,9 +406,11 @@ Deep links and QR codes for both invite/link codes are now built (see
 imported by its file path) exports `parseDeepLink`/`buildDeepLink`, reading/
 writing `?listCode=`/`?deviceCode=` query params from `window.location.origin`
 (no `API_BASE_URL`/production-domain config exists yet, see
-`shared/config/env.ts`). `App.tsx` parses `window.location.search` once on
-boot (same `useRef`-guard pattern as the bootstrap effect), stashes the result
-in `deepLink` state, and resets the URL via `window.history.replaceState`
+`shared/config/env.ts`). `app/model/useDeepLink.ts` parses
+`window.location.search` once on boot (same `useRef`-guard pattern as
+`useAppLists`'s bootstrap effect — split into its own hook for the same
+`max-statements` reason), stashes the result in `deepLink` state, and
+resets the URL via `window.history.replaceState`
 (the app has no other query params today, so this clears the whole query
 string rather than surgically removing one key). `deepLink` is threaded down
 as `initialListCode`/`initialDeviceCode` + `onDeepLinkConsumed` through
