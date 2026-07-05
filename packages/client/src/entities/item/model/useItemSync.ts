@@ -5,8 +5,7 @@ import type { ItemChange } from '@kupi/shared';
 import { ApiError } from '@/shared/api';
 import { syncItems } from '../api/item-api';
 import { applyChangeLocally } from './apply-change-locally';
-import type { ListCache } from './local-cache';
-import { loadListCache, saveListCache } from './local-cache';
+import { loadListCache, saveListCache, type ListCache } from './local-cache';
 import { mergeItems } from './merge-items';
 import { enqueue, markAttempted } from './queue';
 
@@ -31,42 +30,46 @@ export function useItemSync(listId: string) {
 
   const flush = useCallback(async (): Promise<void> => {
     if (flushingRef.current) {
-      // flush уже летит в сеть — не бросаем этот вызов, а просим текущий
-      // перезапуститься по завершении, иначе изменения, добавленные во
-      // время in-flight запроса, застревают в очереди навсегда.
+      // Flush уже летит в сеть — не бросаем этот вызов, а просим текущий
+      // Перезапуститься по завершении, иначе изменения, добавленные во
+      // Время in-flight запроса, застревают в очереди навсегда.
       flushAgainRef.current = true;
       return;
     }
-    // pending может быть пустым — flush всё равно должен уйти в
-    // сеть, он же единственный способ получить чужие изменения (delta pull
-    // по lastSeenSeq), не только отправить свои.
-    const pending = cacheRef.current.queue.filter((q) => !q.failed);
+    // Pending может быть пустым — flush всё равно должен уйти в
+    // Сеть, он же единственный способ получить чужие изменения (delta pull
+    // По lastSeenSeq), не только отправить свои.
+    const pending = cacheRef.current.queue.filter(({ failed }) => !failed);
     flushingRef.current = true;
     const { lastSeenSeq } = cacheRef.current;
     try {
       const response = await syncItems(listId, {
+        changes: pending.map((queueChange) => queueChange.change),
         lastSeenSeq,
-        changes: pending.map((q) => q.change),
       });
       update((current) => ({
         items: mergeItems(current.items, response.items),
         lastSeenSeq: response.seq,
-        // между отправкой запроса и его ответом могли добавиться новые
-        // правки — убираем только то, что реально ушло в этой пачке,
-        // остальное (включая failed) остаётся в очереди.
-        queue: current.queue.filter((q) => q.failed || !pending.includes(q)),
+        // Между отправкой запроса и его ответом могли добавиться новые
+        // Правки — убираем только то, что реально ушло в этой пачке,
+        // Остальное (включая failed) остаётся в очереди.
+        queue: current.queue.filter(
+          (queueChange) => queueChange.failed || !pending.includes(queueChange),
+        ),
       }));
     } catch (err) {
       if (err instanceof ApiError) {
         update((current) => {
-          const failed = current.queue.filter((q) => q.failed);
+          const failed = current.queue.filter(
+            (queueChange) => queueChange.failed,
+          );
           const attempted = markAttempted(
-            current.queue.filter((q) => !q.failed),
+            current.queue.filter((queueChange) => !queueChange.failed),
           );
           return { ...current, queue: [...failed, ...attempted] };
         });
       }
-      // сетевая ошибка (не ApiError) — очередь не трогаем, ждём следующий `online`
+      // Сетевая ошибка (не ApiError) — очередь не трогаем, ждём следующий `online`
     } finally {
       flushingRef.current = false;
       if (flushAgainRef.current) {
@@ -81,10 +84,10 @@ export function useItemSync(listId: string) {
     cacheRef.current = loaded;
     setCache(loaded);
     // StrictMode в dev дважды подряд гоняет mount-эффект одного и того же
-    // инстанса (mount → cleanup → mount) — без гварда это дважды бьёт
-    // syncItems с одинаковыми параметрами. Гвардим по listId, а не булевым
-    // флагом на весь хук, чтобы реальное переключение списка всё ещё
-    // запускало flush.
+    // Инстанса (mount → cleanup → mount) — без гварда это дважды бьёт
+    // SyncItems с одинаковыми параметрами. Гвардим по listId, а не булевым
+    // Флагом на весь хук, чтобы реальное переключение списка всё ещё
+    // Запускало flush.
     if (flushedListIdRef.current === listId) {
       return;
     }
@@ -109,9 +112,9 @@ export function useItemSync(listId: string) {
   };
 
   return {
-    items: cache.items,
-    pendingCount: cache.queue.filter((q) => !q.failed).length,
-    failedCount: cache.queue.filter((q) => q.failed).length,
     applyChange,
+    failedCount: cache.queue.filter(({ failed }) => failed).length,
+    items: cache.items,
+    pendingCount: cache.queue.filter(({ failed }) => !failed).length,
   };
 }

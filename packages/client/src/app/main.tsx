@@ -7,19 +7,19 @@ import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 
 import { App } from './App';
-import { theme } from './theme/theme';
 import './styles/globals.css';
+import { theme } from './theme/theme';
 
-// ponytail: dev-only self-heal — a service worker registered by an earlier
-// production preview on this same origin/port silently breaks every fetch
-// under `vite dev` (which doesn't serve /sw.js itself). Unregister on every
-// dev load instead of relying on someone remembering to clear it by hand.
+// Ponytail: dev-only self-heal — a service worker registered by an earlier
+// Production preview on this same origin/port silently breaks every fetch
+// Under `vite dev` (which doesn't serve /sw.js itself). Unregister on every
+// Dev load instead of relying on someone remembering to clear it by hand.
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {
-  void navigator.serviceWorker.getRegistrations().then((registrations) => {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
     if (registrations.length === 0) {
       return;
     }
-    void Promise.all(registrations.map((r) => r.unregister())).then(() => {
+    Promise.all(registrations.map((reg) => reg.unregister())).then(() => {
       if (navigator.serviceWorker.controller) {
         location.reload();
       }
@@ -27,7 +27,12 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
   });
 }
 
-createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('#root element not found');
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <MantineProvider theme={theme}>
       <Notifications />

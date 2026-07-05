@@ -2,7 +2,9 @@ import type { Category } from '@kupi/shared';
 
 import styles from './styles.module.css';
 
-type Props = { category: Category | undefined };
+interface Props {
+  category: Category | undefined;
+}
 
 export function CategoryIcon({ category }: Props) {
   if (!category) {

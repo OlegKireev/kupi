@@ -11,7 +11,7 @@ import { ListSwitcher } from '@/features/list-switcher';
 import { useToggleItem } from '@/features/toggle-item';
 import { Group, List as ListComponent, Stack, Text } from '@/shared/ui';
 
-type Props = {
+interface Props {
   list: List;
   lists: List[];
   categories: Category[];
@@ -21,7 +21,7 @@ type Props = {
   initialListCode?: string;
   initialDeviceCode?: string;
   onDeepLinkConsumed: () => void;
-};
+}
 
 export function ListScreen({
   list,
@@ -82,7 +82,7 @@ export function ListScreen({
             item={item}
             categoryIcon={
               <CategoryIcon
-                category={categories.find((c) => c.id === item.categoryId)}
+                category={categories.find(({ id }) => id === item.categoryId)}
               />
             }
             editor={

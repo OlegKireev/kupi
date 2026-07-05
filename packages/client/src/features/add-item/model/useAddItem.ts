@@ -5,9 +5,9 @@ import type { ItemChange, Suggestion } from '@kupi/shared';
 import { generateId } from '@/shared/lib/ids';
 import { getSuggestions } from '../api/suggestions-api';
 
-type Params = {
+interface Params {
   applyChange: (change: ItemChange) => void;
-};
+}
 
 export function useAddItem({ applyChange }: Params) {
   const [text, setText] = useState('');
@@ -37,10 +37,10 @@ export function useAddItem({ applyChange }: Params) {
       return;
     }
     applyChange({
-      itemId: generateId(),
       clientOpId: generateId(),
+      fields: { categoryId: null, name: trimmed, quantity: 1 },
+      itemId: generateId(),
       op: 'upsert',
-      fields: { name: trimmed, quantity: 1, categoryId: null },
     });
     setText('');
     setSuggestions([]);
@@ -65,5 +65,5 @@ export function useAddItem({ applyChange }: Params) {
     });
   };
 
-  return { text, suggestions, onTextChange, submitOnEnter, selectSuggestion };
+  return { onTextChange, selectSuggestion, submitOnEnter, suggestions, text };
 }

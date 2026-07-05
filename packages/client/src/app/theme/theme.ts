@@ -1,10 +1,10 @@
 import { createTheme } from '@mantine/core';
 
 export const theme = createTheme({
-  primaryColor: 'orange',
   defaultGradient: {
+    deg: 45,
     from: 'orange',
     to: 'red',
-    deg: 45,
   },
+  primaryColor: 'orange',
 });

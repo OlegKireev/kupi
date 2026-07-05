@@ -58,10 +58,10 @@ export function App() {
   }, []);
 
   // Диплинк (?listCode=.../?deviceCode=...) читается один раз при старте —
-  // тот же useRef-guard, что и у bootstrap-эффекта, против двойного вызова
-  // в React StrictMode. URL сбрасывается целиком (других query-параметров у
-  // приложения сейчас нет), чтобы обновление страницы не открывало модалку
-  // повторно.
+  // Тот же useRef-guard, что и у bootstrap-эффекта, против двойного вызова
+  // В React StrictMode. URL сбрасывается целиком (других query-параметров у
+  // Приложения сейчас нет), чтобы обновление страницы не открывало модалку
+  // Повторно.
   useEffect(() => {
     if (deepLinkParsed.current) {
       return;
@@ -81,9 +81,9 @@ export function App() {
   }, [lists, categories]);
 
   // Общий сеттер lists/activeListId с fallback-логикой: если список
-  // оказался пуст (после удаления/выхода, либо у только что привязанного
-  // аккаунта), заводит список по умолчанию — тот же паттерн, что при
-  // онбординге нового аккаунта, вместо молчаливого опустошения экрана.
+  // Оказался пуст (после удаления/выхода, либо у только что привязанного
+  // Аккаунта), заводит список по умолчанию — тот же паттерн, что при
+  // Онбординге нового аккаунта, вместо молчаливого опустошения экрана.
   const applyLists = async (
     fetchedLists: List[],
     selectId?: string,
@@ -95,29 +95,29 @@ export function App() {
     setLists(nextLists);
     setActiveListId((current) => {
       const preferred = selectId ?? current;
-      return preferred && nextLists.some((l) => l.id === preferred)
+      return preferred && nextLists.some(({ id }) => id === preferred)
         ? preferred
-        : nextLists[0]!.id;
+        : (nextLists[0]?.id ?? null);
     });
   };
 
   // Перезапрашивает GET /lists после мутации (создание/переименование/удаление
-  // списка) — не hot path, ручной патч состояния не нужен.
+  // Списка) — не hot path, ручной патч состояния не нужен.
   const refreshLists = async (selectId?: string): Promise<void> => {
     await applyLists(await getLists(), selectId);
   };
 
   // Редимпшн линк-кода меняет cookie этого устройства на другой аккаунт —
-  // сервер уже вернул полный bootstrap, второй round-trip не нужен. Списки
-  // старого аккаунта больше не будут перечитаны, поэтому их localStorage-кеш
+  // Сервер уже вернул полный bootstrap, второй round-trip не нужен. Списки
+  // Старого аккаунта больше не будут перечитаны, поэтому их localStorage-кеш
   // (`kupi:list:<id>`) чистим здесь, иначе он остаётся в хранилище навсегда.
   const onAccountLinked = async (bootstrap: Bootstrap): Promise<void> => {
-    lists.forEach((l) => clearListCache(l.id));
+    lists.forEach(({ id }) => clearListCache(id));
     await applyLists(bootstrap.lists);
     setCategories(bootstrap.categories);
   };
 
-  const activeList = lists.find((l) => l.id === activeListId);
+  const activeList = lists.find(({ id }) => id === activeListId);
   if (!activeList) {
     return null;
   }

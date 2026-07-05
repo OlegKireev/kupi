@@ -16,14 +16,14 @@ import { useOnlineStatus } from '@/shared/lib/useOnlineStatus';
 import { notifications } from '@/shared/ui';
 import { getSyncStatusText } from './sync-status';
 
-type Params = {
+interface Params {
   list: List;
   onListsChanged: (selectId?: string) => void;
   pendingCount: number;
   failedCount: number;
   initialCode?: string;
   onDeepLinkConsumed: () => void;
-};
+}
 
 type InviteModalState = { title: string; code: string; url: string } | null;
 
@@ -65,14 +65,14 @@ export function useListSwitcher({
   }, [initialCode, onDeepLinkConsumed]);
 
   const loadMemberCount = (): void => {
-    void getMemberCount(list.id).then(setMemberCount);
+    getMemberCount(list.id).then(setMemberCount);
   };
 
   const openInvite = async (): Promise<void> => {
     const { code } = await createInvite(list.id);
     setInviteModal({
-      title: 'Код приглашения',
       code,
+      title: 'Код приглашения',
       url: buildDeepLink('list', code),
     });
   };
@@ -139,33 +139,33 @@ export function useListSwitcher({
   };
 
   return {
-    syncStatusText,
-    memberCount,
-    loadMemberCount,
-    inviteModal,
-    openInvite,
-    closeInviteModal,
-    renameOpen,
-    renameValue,
-    setRenameValue,
-    openRename,
-    closeRename,
-    submitRename,
-    confirmDeleteOpen,
-    openConfirmDelete,
+    closeCode,
     closeConfirmDelete,
-    confirmDelete,
-    newListOpen,
-    newListName,
-    setNewListName,
-    openNewList,
+    closeInviteModal,
     closeNewList,
-    submitNewList,
+    closeRename,
     codeOpen,
     codeValue,
-    setCodeValue,
+    confirmDelete,
+    confirmDeleteOpen,
+    inviteModal,
+    loadMemberCount,
+    memberCount,
+    newListName,
+    newListOpen,
     openCode,
-    closeCode,
+    openConfirmDelete,
+    openInvite,
+    openNewList,
+    openRename,
+    renameOpen,
+    renameValue,
+    setCodeValue,
+    setNewListName,
+    setRenameValue,
     submitCode,
+    submitNewList,
+    submitRename,
+    syncStatusText,
   };
 }

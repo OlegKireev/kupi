@@ -1,15 +1,18 @@
-export type DeepLink = { kind: 'list' | 'device'; code: string };
+export interface DeepLink {
+  kind: 'list' | 'device';
+  code: string;
+}
 
 /** Разбирает `window.location.search` на код инвайта/линковки. */
 export function parseDeepLink(search: string): DeepLink | null {
   const params = new URLSearchParams(search);
   const listCode = params.get('listCode');
   if (listCode) {
-    return { kind: 'list', code: listCode };
+    return { code: listCode, kind: 'list' };
   }
   const deviceCode = params.get('deviceCode');
   if (deviceCode) {
-    return { kind: 'device', code: deviceCode };
+    return { code: deviceCode, kind: 'device' };
   }
   return null;
 }

@@ -2,11 +2,11 @@ import type { Item } from '@kupi/shared';
 
 import type { QueuedChange } from './queue';
 
-export type ListCache = {
+export interface ListCache {
   items: Item[];
   lastSeenSeq: number;
   queue: QueuedChange[];
-};
+}
 
 const key = (listId: string): string => `kupi:list:${listId}`;
 

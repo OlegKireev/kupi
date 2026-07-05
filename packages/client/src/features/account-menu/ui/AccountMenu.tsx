@@ -4,21 +4,21 @@ import {
   ActionIcon,
   Button,
   CodeShareModal,
+  DevicesIcon,
+  KeyIcon,
   Menu,
   Modal,
   Text,
   TextInput,
-  DevicesIcon,
-  KeyIcon,
   UserCircleIcon,
 } from '@/shared/ui';
 import { useAccountMenu } from '../model/useAccountMenu';
 
-type Props = {
+interface Props {
   onAccountLinked: (bootstrap: Bootstrap) => Promise<void>;
   initialCode?: string;
   onDeepLinkConsumed: () => void;
-};
+}
 
 export function AccountMenu({
   onAccountLinked,
@@ -38,7 +38,7 @@ export function AccountMenu({
     pendingLinkCode,
     cancelLinkDevice,
     confirmLinkDevice,
-  } = useAccountMenu({ onAccountLinked, initialCode, onDeepLinkConsumed });
+  } = useAccountMenu({ initialCode, onAccountLinked, onDeepLinkConsumed });
 
   return (
     <>
@@ -102,8 +102,8 @@ export function AccountMenu({
         title="Подключить устройство?"
       >
         <Text>
-          Это заменит аккаунт этого устройства. Текущие списки станут
-          недоступны с него. Продолжить?
+          Это заменит аккаунт этого устройства. Текущие списки станут недоступны
+          с него. Продолжить?
         </Text>
         <Button
           mt="md"

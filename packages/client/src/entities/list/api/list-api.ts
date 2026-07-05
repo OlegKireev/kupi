@@ -27,7 +27,9 @@ export function createInvite(id: string): Promise<{ code: string }> {
 }
 
 export function getMemberCount(id: string): Promise<number> {
-  return get<{ count: number }>(`/lists/${id}/members`).then((r) => r.count);
+  return get<{ count: number }>(`/lists/${id}/members`).then(
+    (response) => response.count,
+  );
 }
 
 export function joinList(code: string): Promise<List> {

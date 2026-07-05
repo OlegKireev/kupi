@@ -8,11 +8,11 @@ import { buildDeepLink } from '@/shared/lib/deep-link';
 import { notifications } from '@/shared/ui';
 import { createLinkCode } from '../api/link-code-api';
 
-type Params = {
+interface Params {
   onAccountLinked: (bootstrap: Bootstrap) => Promise<void>;
   initialCode?: string;
   onDeepLinkConsumed: () => void;
-};
+}
 
 type CodeModalState = { title: string; code: string; url: string } | null;
 
@@ -44,8 +44,8 @@ export function useAccountMenu({
   const openLinkDevice = async (): Promise<void> => {
     const { code } = await createLinkCode();
     setCodeModal({
-      title: 'Код подключения устройства',
       code,
+      title: 'Код подключения устройства',
       url: buildDeepLink('device', code),
     });
   };
@@ -89,17 +89,17 @@ export function useAccountMenu({
   };
 
   return {
-    codeModal,
+    cancelLinkDevice,
     closeCodeModal,
-    openLinkDevice,
+    closeDeviceCode,
+    codeModal,
+    confirmLinkDevice,
     deviceCodeOpen,
     deviceCodeValue,
-    setDeviceCodeValue,
     openDeviceCode,
-    closeDeviceCode,
-    submitDeviceCode,
+    openLinkDevice,
     pendingLinkCode,
-    cancelLinkDevice,
-    confirmLinkDevice,
+    setDeviceCodeValue,
+    submitDeviceCode,
   };
 }

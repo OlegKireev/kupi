@@ -15,15 +15,15 @@ export function applyChangeLocally(
 
   if (index === -1) {
     const newItem: Item = {
+      categoryId: change.fields.categoryId ?? null,
+      checked: change.fields.checked ?? false,
+      deleted: false,
       id: change.itemId,
       listId,
       name: change.fields.name ?? '',
       quantity: change.fields.quantity ?? 1,
-      categoryId: change.fields.categoryId ?? null,
-      checked: change.fields.checked ?? false,
-      version: 0,
-      deleted: false,
       updatedAt: Date.now(),
+      version: 0,
     };
     return [newItem, ...items];
   }

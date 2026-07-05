@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react';
 import { Button, Modal, Text } from '@mantine/core';
 import { CopyIcon, ShareIcon } from '@phosphor-icons/react';
 import QRCode from 'qrcode';
+import { useEffect, useState } from 'react';
 
-type Props = {
+interface Props {
   opened: boolean;
   onClose: () => void;
   title: string;
   url: string;
   code: string;
-};
+}
 
 /**
  * Общая модалка для обеих генерирующих сторон шеринга (инвайт в список,
@@ -26,7 +26,7 @@ export function CodeShareModal({ opened, onClose, title, url, code }: Props) {
     }
     setQrDataUrl(null);
     let cancelled = false;
-    void QRCode.toDataURL(url).then((dataUrl) => {
+    QRCode.toDataURL(url).then((dataUrl) => {
       if (!cancelled) {
         setQrDataUrl(dataUrl);
       }

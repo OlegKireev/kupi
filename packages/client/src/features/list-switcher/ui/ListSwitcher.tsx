@@ -2,27 +2,23 @@ import type { List } from '@kupi/shared';
 
 import {
   Button,
-  CaretDownIcon,
   CheckIcon,
   CodeShareModal,
   FilePlusIcon,
-  Group,
   KeyIcon,
   Menu,
   Modal,
   Text,
   TextboxIcon,
   TextInput,
-  Title,
   TrashIcon,
-  UnstyledButton,
   UserPlusIcon,
   UsersFourIcon,
 } from '@/shared/ui';
 import { useListSwitcher } from '../model/useListSwitcher';
-import styles from './styles.module.css';
+import { MenuTrigger } from './MenuTrigger';
 
-type Props = {
+interface Props {
   list: List;
   lists: List[];
   onSwitchList: (id: string) => void;
@@ -31,7 +27,7 @@ type Props = {
   failedCount: number;
   initialCode?: string;
   onDeepLinkConsumed: () => void;
-};
+}
 
 export function ListSwitcher({
   list,
@@ -73,12 +69,12 @@ export function ListSwitcher({
     closeCode,
     submitCode,
   } = useListSwitcher({
-    list,
-    onListsChanged,
-    pendingCount,
     failedCount,
     initialCode,
+    list,
     onDeepLinkConsumed,
+    onListsChanged,
+    pendingCount,
   });
 
   const isOwner = list.role === 'owner';
@@ -87,23 +83,7 @@ export function ListSwitcher({
     <>
       <Menu onOpen={loadMemberCount}>
         <Menu.Target>
-          <UnstyledButton className={styles.menuTrigger}>
-            <Group
-              gap={8}
-              wrap="nowrap"
-            >
-              <Title
-                order={1}
-                size="h2"
-              >
-                {list.name}
-              </Title>
-              <CaretDownIcon
-                size={20}
-                className={styles.caretIcon}
-              />
-            </Group>
-          </UnstyledButton>
+          <MenuTrigger>{list.name}</MenuTrigger>
         </Menu.Target>
         <Menu.Dropdown>
           <Menu.Label>{syncStatusText}</Menu.Label>
@@ -137,16 +117,16 @@ export function ListSwitcher({
             {isOwner ? 'Удалить список' : 'Покинуть список'}
           </Menu.Item>
           <Menu.Divider />
-          {lists.map((l) => (
+          {lists.map(({ id, role, name }) => (
             <Menu.Item
-              key={l.id}
+              key={id}
               leftSection={
-                l.role === 'member' ? <UsersFourIcon size={14} /> : undefined
+                role === 'member' ? <UsersFourIcon size={14} /> : undefined
               }
-              rightSection={l.id === list.id ? <CheckIcon size={16} /> : null}
-              onClick={() => onSwitchList(l.id)}
+              rightSection={id === list.id ? <CheckIcon size={16} /> : null}
+              onClick={() => onSwitchList(id)}
             >
-              {l.name}
+              {name}
             </Menu.Item>
           ))}
           <Menu.Divider />

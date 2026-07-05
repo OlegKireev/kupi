@@ -1,33 +1,33 @@
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
-import { VitePWA } from 'vite-plugin-pwa';
+import { VitePWA as pwa } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  plugins: [
+    react(),
+    pwa({
+      manifest: {
+        background_color: '#ffffff',
+        display: 'standalone',
+        name: 'kupi',
+        short_name: 'kupi',
+        start_url: '/',
+        theme_color: '#ffffff',
+      },
+      registerType: 'autoUpdate',
+    }),
+  ],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   server: {
+    allowedHosts: ['gummier-hypervigilantly-evelin.ngrok-free.dev'],
     proxy: {
       '^/api': {
-        target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:3000',
         changeOrigin: true,
+        target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:3000',
       },
     },
-    allowedHosts: ['gummier-hypervigilantly-evelin.ngrok-free.dev'],
   },
-  plugins: [
-    react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      manifest: {
-        name: 'kupi',
-        short_name: 'kupi',
-        start_url: '/',
-        display: 'standalone',
-        background_color: '#ffffff',
-        theme_color: '#ffffff',
-      },
-    }),
-  ],
 });

@@ -1,37 +1,39 @@
-import { expect, test } from 'vitest';
-
 import type { ItemChange } from '@kupi/shared';
+
+import { describe, expect, it } from 'vitest';
 
 import { enqueue, markAttempted } from './queue';
 
 const change: ItemChange = {
-  itemId: 'item-1',
   clientOpId: 'op-1',
-  op: 'upsert',
   fields: { checked: true },
+  itemId: 'item-1',
+  op: 'upsert',
 };
 
-test('enqueue appends a change with zero attempts', () => {
-  const queue = enqueue([], change);
-  expect(queue).toEqual([{ change, attempts: 0, failed: false }]);
-});
+describe('queue', () => {
+  it('enqueue appends a change with zero attempts', () => {
+    const queue = enqueue([], change);
+    expect(queue).toStrictEqual([{ attempts: 0, change, failed: false }]);
+  });
 
-test('markAttempted increments attempts on every entry', () => {
-  const queue = enqueue([], change);
-  const next = markAttempted(queue);
-  expect(next[0]).toEqual({ change, attempts: 1, failed: false });
-});
+  it('markAttempted increments attempts on every entry', () => {
+    const queue = enqueue([], change);
+    const next = markAttempted(queue);
+    expect(next[0]).toStrictEqual({ attempts: 1, change, failed: false });
+  });
 
-test('markAttempted marks an entry failed after 3 attempts', () => {
-  let queue = enqueue([], change);
-  queue = markAttempted(queue);
-  queue = markAttempted(queue);
-  queue = markAttempted(queue);
-  expect(queue[0]).toEqual({ change, attempts: 3, failed: true });
-});
+  it('markAttempted marks an entry failed after 3 attempts', () => {
+    let queue = enqueue([], change);
+    queue = markAttempted(queue);
+    queue = markAttempted(queue);
+    queue = markAttempted(queue);
+    expect(queue[0]).toStrictEqual({ attempts: 3, change, failed: true });
+  });
 
-test('markAttempted keeps a failed entry failed on further attempts', () => {
-  let queue = [{ change, attempts: 3, failed: true }];
-  queue = markAttempted(queue);
-  expect(queue[0]).toEqual({ change, attempts: 4, failed: true });
+  it('markAttempted keeps a failed entry failed on further attempts', () => {
+    let queue = [{ attempts: 3, change, failed: true }];
+    queue = markAttempted(queue);
+    expect(queue[0]).toStrictEqual({ attempts: 4, change, failed: true });
+  });
 });

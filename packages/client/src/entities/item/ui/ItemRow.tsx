@@ -5,22 +5,22 @@ import type { Item } from '@kupi/shared';
 import {
   ActionIcon,
   Checkbox,
+  DotsThreeVerticalIcon,
   Group,
   InputLabel,
-  DotsThreeVerticalIcon,
   Stack,
   Text,
 } from '@/shared/ui';
 
 import styles from './styles.module.css';
 
-type Props = {
+interface Props {
   item: Item;
   categoryIcon?: ReactNode;
   editor?: ReactNode;
   onToggle: () => void;
   onOpen: () => void;
-};
+}
 
 export function ItemRow({
   item,

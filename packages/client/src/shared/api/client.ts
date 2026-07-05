@@ -1,11 +1,11 @@
 import { API_BASE_URL } from '@/shared/config';
 
 export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
+  public status: number;
+
+  public constructor(status: number, message: string) {
     super(message);
+    this.status = status;
   }
 }
 
@@ -14,9 +14,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     credentials: 'include',
     ...init,
     headers: {
-      ...(init?.body !== undefined
-        ? { 'Content-Type': 'application/json' }
-        : {}),
+      ...(init?.body === undefined
+        ? {}
+        : { 'Content-Type': 'application/json' }),
       ...init?.headers,
     },
   });
@@ -35,15 +35,15 @@ export function get<T>(path: string): Promise<T> {
 
 export function post<T>(path: string, body?: unknown): Promise<T> {
   return request<T>(path, {
-    method: 'POST',
     body: body === undefined ? undefined : JSON.stringify(body),
+    method: 'POST',
   });
 }
 
 export function patch<T>(path: string, body?: unknown): Promise<T> {
   return request<T>(path, {
-    method: 'PATCH',
     body: body === undefined ? undefined : JSON.stringify(body),
+    method: 'PATCH',
   });
 }
 

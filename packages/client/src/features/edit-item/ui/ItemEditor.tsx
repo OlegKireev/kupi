@@ -3,7 +3,6 @@ import type { Category, Item, ItemChange } from '@kupi/shared';
 import {
   ActionIcon,
   Button,
-  Chip,
   Flex,
   Group,
   Stack,
@@ -11,20 +10,21 @@ import {
   TrashIcon,
 } from '@/shared/ui';
 import { useEditItem } from '../model/useEditItem';
+import { CategoryChips } from './CategoryChips';
 
-type Props = {
+interface Props {
   item: Item;
   categories: Category[];
   applyChange: (change: ItemChange) => void;
   onClose: () => void;
-};
+}
 
 export function ItemEditor({ item, categories, applyChange, onClose }: Props) {
   const { setQuantity, setCategory, deleteItem } = useEditItem({ applyChange });
 
   return (
     <Stack component="li">
-      <Group p={'0 16px 16px'}>
+      <Group p="0 16px 16px">
         <Group
           gap="xs"
           wrap="nowrap"
@@ -34,7 +34,7 @@ export function ItemEditor({ item, categories, applyChange, onClose }: Props) {
             aria-label="Уменьшить количество"
             onClick={() => setQuantity(item, Math.max(1, item.quantity - 1))}
           >
-            −
+            -
           </ActionIcon>
           <Text>{item.quantity}</Text>
           <ActionIcon
@@ -59,27 +59,16 @@ export function ItemEditor({ item, categories, applyChange, onClose }: Props) {
           Удалить
         </Button>
         <Flex flex="1 1 100%">
-          <Chip.Group
-            multiple={false}
-            value={item.categoryId}
+          <CategoryChips
+            categories={categories}
+            selectedCategoryId={item.categoryId}
             onChange={(value) => setCategory(item, value)}
-          >
-            <Group gap="xs">
-              {categories.map((c) => (
-                <Chip
-                  key={c.id}
-                  value={c.id}
-                  onClick={(event) => {
-                    if (event.currentTarget.value === item.categoryId) {
-                      setCategory(item, null);
-                    }
-                  }}
-                >
-                  {c.icon} {c.name}
-                </Chip>
-              ))}
-            </Group>
-          </Chip.Group>
+            onChipClick={(event) => {
+              if (event.currentTarget.value === item.categoryId) {
+                setCategory(item, null);
+              }
+            }}
+          />
         </Flex>
       </Group>
     </Stack>
