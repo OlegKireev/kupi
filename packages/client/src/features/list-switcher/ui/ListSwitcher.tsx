@@ -1,22 +1,10 @@
 import type { List } from '@kupi/shared';
 
-import {
-  Button,
-  CheckIcon,
-  CodeShareModal,
-  FilePlusIcon,
-  KeyIcon,
-  Menu,
-  Modal,
-  Text,
-  TextboxIcon,
-  TextInput,
-  TrashIcon,
-  UserPlusIcon,
-  UsersFourIcon,
-} from '@/shared/ui';
+import { CodeShareModal, FilePlusIcon, KeyIcon } from '@/shared/ui';
 import { useListSwitcher } from '../model/useListSwitcher';
-import { MenuTrigger } from './MenuTrigger';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { ListMenu } from './ListMenu';
+import { TextPromptModal } from './TextPromptModal';
 
 interface Props {
   list: List;
@@ -81,69 +69,20 @@ export function ListSwitcher({
 
   return (
     <>
-      <Menu onOpen={loadMemberCount}>
-        <Menu.Target>
-          <MenuTrigger>{list.name}</MenuTrigger>
-        </Menu.Target>
-        <Menu.Dropdown>
-          <Menu.Label>{syncStatusText}</Menu.Label>
-          {isOwner && (
-            <Menu.Item
-              leftSection={<UserPlusIcon size={16} />}
-              onClick={openInvite}
-            >
-              Пригласить в список
-            </Menu.Item>
-          )}
-          <Menu.Item
-            disabled
-            leftSection={<UsersFourIcon size={16} />}
-          >
-            Участники ({memberCount ?? '…'})
-          </Menu.Item>
-          {isOwner && (
-            <Menu.Item
-              leftSection={<TextboxIcon size={16} />}
-              onClick={openRename}
-            >
-              Переименовать список
-            </Menu.Item>
-          )}
-          <Menu.Item
-            color="red"
-            leftSection={<TrashIcon size={16} />}
-            onClick={openConfirmDelete}
-          >
-            {isOwner ? 'Удалить список' : 'Покинуть список'}
-          </Menu.Item>
-          <Menu.Divider />
-          {lists.map(({ id, role, name }) => (
-            <Menu.Item
-              key={id}
-              leftSection={
-                role === 'member' ? <UsersFourIcon size={14} /> : undefined
-              }
-              rightSection={id === list.id ? <CheckIcon size={16} /> : null}
-              onClick={() => onSwitchList(id)}
-            >
-              {name}
-            </Menu.Item>
-          ))}
-          <Menu.Divider />
-          <Menu.Item
-            leftSection={<FilePlusIcon size={16} />}
-            onClick={openNewList}
-          >
-            Новый список
-          </Menu.Item>
-          <Menu.Item
-            leftSection={<KeyIcon size={16} />}
-            onClick={openCode}
-          >
-            Присоединиться по коду списка
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
+      <ListMenu
+        list={list}
+        lists={lists}
+        isOwner={isOwner}
+        syncStatusText={syncStatusText}
+        memberCount={memberCount}
+        onOpen={loadMemberCount}
+        onSwitchList={onSwitchList}
+        onInvite={openInvite}
+        onRename={openRename}
+        onDelete={openConfirmDelete}
+        onNewList={openNewList}
+        onJoinByCode={openCode}
+      />
 
       <CodeShareModal
         opened={inviteModal !== null}
@@ -153,86 +92,46 @@ export function ListSwitcher({
         code={inviteModal?.code ?? ''}
       />
 
-      <Modal
+      <TextPromptModal
         opened={renameOpen}
         onClose={closeRename}
         title="Переименовать список"
-      >
-        <TextInput
-          value={renameValue}
-          onChange={(e) => setRenameValue(e.currentTarget.value)}
-          data-autofocus
-        />
-        <Button
-          mt="md"
-          fullWidth
-          onClick={submitRename}
-        >
-          Сохранить
-        </Button>
-      </Modal>
+        value={renameValue}
+        onChange={setRenameValue}
+        onSubmit={submitRename}
+        submitLabel="Сохранить"
+      />
 
-      <Modal
+      <DeleteConfirmModal
         opened={confirmDeleteOpen}
         onClose={closeConfirmDelete}
-        title={isOwner ? 'Удалить список?' : 'Покинуть список?'}
-      >
-        <Text>
-          {isOwner
-            ? 'Список удалится для всех участников.'
-            : 'Вы выйдете из списка, для остальных участников он останется.'}
-        </Text>
-        <Button
-          mt="md"
-          fullWidth
-          color="red"
-          onClick={confirmDelete}
-        >
-          Подтвердить
-        </Button>
-      </Modal>
+        isOwner={isOwner}
+        onConfirm={confirmDelete}
+      />
 
-      <Modal
+      <TextPromptModal
         opened={newListOpen}
         onClose={closeNewList}
         title="Новый список"
-      >
-        <TextInput
-          value={newListName}
-          onChange={(e) => setNewListName(e.currentTarget.value)}
-          placeholder="Название списка"
-          data-autofocus
-        />
-        <Button
-          mt="md"
-          fullWidth
-          leftSection={<FilePlusIcon />}
-          onClick={submitNewList}
-        >
-          Создать
-        </Button>
-      </Modal>
+        value={newListName}
+        onChange={setNewListName}
+        onSubmit={submitNewList}
+        placeholder="Название списка"
+        submitLabel="Создать"
+        submitIcon={<FilePlusIcon />}
+      />
 
-      <Modal
+      <TextPromptModal
         opened={codeOpen}
         onClose={closeCode}
         title="Присоединиться по коду списка"
-      >
-        <TextInput
-          value={codeValue}
-          onChange={(e) => setCodeValue(e.currentTarget.value)}
-          placeholder="Код приглашения"
-          data-autofocus
-        />
-        <Button
-          mt="md"
-          fullWidth
-          leftSection={<KeyIcon />}
-          onClick={submitCode}
-        >
-          Продолжить
-        </Button>
-      </Modal>
+        value={codeValue}
+        onChange={setCodeValue}
+        onSubmit={submitCode}
+        placeholder="Код приглашения"
+        submitLabel="Продолжить"
+        submitIcon={<KeyIcon />}
+      />
     </>
   );
 }

@@ -317,7 +317,13 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   `useAccountMenu`'s `confirmLinkDevice` (device-link codes) hit the exact
   same 400-vs-rethrow branch, so that one *did* move to `shared/api`
   (`isInvalidCodeError`/`handleInvalidCodeError` next to `ApiError`) instead
-  of staying duplicated per-feature;
+  of staying duplicated per-feature. `ui/ListSwitcher.tsx` itself is split
+  the same way for `max-lines-per-function`: the dropdown's JSX moved to
+  `ui/ListMenu.tsx`, the rename/new-list/join-by-code modals — identical
+  shape (`Modal` + one `TextInput` + submit `Button`) apart from copy and
+  icon — collapsed into one `ui/TextPromptModal.tsx`, and the delete/leave
+  confirm modal into `ui/DeleteConfirmModal.tsx`; `ListSwitcher` itself is
+  just composition now.
   `model/code-kind.ts` is deleted along with it — device link codes are
   entered exclusively through `account-menu` now, so there's no code input
   left that needs to guess its type by length. `400 invalid_code` surfaces as
