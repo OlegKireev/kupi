@@ -7,14 +7,10 @@ interface Props extends ComponentPropsWithRef<'button'> {
   children: ReactNode;
 }
 
-// ...props (incl. ref, React 19 passes it as a plain prop) forwards
-// Menu.Target's injected onClick/aria-*/ref onto the real button — Menu.Target
-// clones its child and relies on that being forwarded, same as a plain
-// UnstyledButton would do natively.
-export function MenuTrigger({ children, ...props }: Props) {
+export function MenuTrigger({ children, className, ...props }: Props) {
   return (
     <UnstyledButton
-      className={styles.menuTrigger}
+      className={[className, styles.menuTrigger].filter(Boolean).join(' ')}
       {...props}
     >
       <Group

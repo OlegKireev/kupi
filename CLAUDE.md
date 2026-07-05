@@ -332,7 +332,11 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   `onClick`), caught only when `pnpm test:e2e` started failing on every
   sharing/multi-list test that opens the switcher. Fixed by accepting
   `ComponentPropsWithRef<'button'>` and spreading `...props` (React 19 passes
-  `ref` as a plain prop, no `forwardRef` needed).
+  `ref` as a plain prop, no `forwardRef` needed). No caller passes its own
+  `className` and Mantine's clone doesn't inject one either, so joining it
+  unconditionally (`` `${className} ${styles.menuTrigger}` ``) produced a
+  literal `"undefined menuTrigger_<hash>"` class — filtered out now via
+  `[className, styles.menuTrigger].filter(Boolean).join(' ')`.
   `model/code-kind.ts` is deleted along with it — device link codes are
   entered exclusively through `account-menu` now, so there's no code input
   left that needs to guess its type by length. `400 invalid_code` surfaces as
