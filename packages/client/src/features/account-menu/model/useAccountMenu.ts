@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Bootstrap } from '@kupi/shared';
 
 import { redeemLinkCode } from '@/entities/list';
-import { ApiError } from '@/shared/api';
+import { handleInvalidCodeError } from '@/shared/api';
 import { buildDeepLink } from '@/shared/lib/deep-link';
 import { notifications } from '@/shared/ui';
 import { createLinkCode } from '../api/link-code-api';
@@ -17,15 +17,6 @@ interface Params {
 type CodeModalState = { title: string; code: string; url: string } | null;
 
 const INVALID_CODE_MESSAGE = 'Неверный код';
-
-/** 400 от /link — введённый код неверный/просрочен, возвращаем на экран
- * ввода с тостом; любая другая ошибка — не наш случай, пробрасываем. */
-function handleLinkError(err: unknown, onInvalidCode: () => void): void {
-  if (!(err instanceof ApiError) || err.status !== 400) {
-    throw err;
-  }
-  onInvalidCode();
-}
 
 /** Состояние экрана ручного ввода кода устройства — вынесено отдельно,
  * чтобы useAccountMenu укладывался в max-statements. */
@@ -105,7 +96,7 @@ export function useAccountMenu({
       setPendingLinkCode(null);
       await onAccountLinked(bootstrap);
     } catch (err) {
-      handleLinkError(err, () => {
+      handleInvalidCodeError(err, () => {
         setPendingLinkCode(null);
         deviceCode.reopenDeviceCode();
         notifications.show({ color: 'red', message: INVALID_CODE_MESSAGE });

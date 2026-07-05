@@ -222,7 +222,10 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
 `widgets/list-screen/ui/ListScreen.tsx`; data access is bare `fetch` via
 `shared/api/client.ts`'s `get`/`post`/`patch`/`del`.
 
-- **`shared/`** — `api/client.ts` (thin `fetch` wrapper + `ApiError`),
+- **`shared/`** — `api/client.ts` (thin `fetch` wrapper + `ApiError`, plus
+  `isInvalidCodeError`/`handleInvalidCodeError` — the 400-from-a-code-redeem
+  check shared by `list-switcher`'s join-by-code and `account-menu`'s
+  device-link flows),
   `config/env.ts` (`API_BASE_URL`, currently `''` — relative paths + the Vite
   dev-proxy keep client and server on one origin; revisit once they're
   deployed separately), `lib/ids.ts` (`generateId`, wraps
@@ -305,7 +308,16 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   список" (`Modal` + `TextInput` → `createList`); "Присоединиться по коду
   списка" (`Modal` + `TextInput`, list-invite codes only — 8 chars, no more
   length-based guessing) → `joinList`. `model/useListSwitcher.ts` owns all of
-  this state (absorbed from the deleted `list-menu/model/useListMenu.ts`);
+  this state (absorbed from the deleted `list-menu/model/useListMenu.ts`),
+  split into one private hook per sub-flow (`useInviteModal`,
+  `useRenameList`, `useDeleteList`, `useNewList`, `useJoinByCode`) purely to
+  fit `oxlint`'s `max-statements` — `useListSwitcher` itself just calls all
+  five and spreads their results into one return object, none of them are
+  used anywhere else. `useJoinByCode`'s invalid-code handling and
+  `useAccountMenu`'s `confirmLinkDevice` (device-link codes) hit the exact
+  same 400-vs-rethrow branch, so that one *did* move to `shared/api`
+  (`isInvalidCodeError`/`handleInvalidCodeError` next to `ApiError`) instead
+  of staying duplicated per-feature;
   `model/code-kind.ts` is deleted along with it — device link codes are
   entered exclusively through `account-menu` now, so there's no code input
   left that needs to guess its type by length. `400 invalid_code` surfaces as

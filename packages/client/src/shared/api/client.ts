@@ -9,6 +9,25 @@ export class ApiError extends Error {
   }
 }
 
+/** 400 из /link или /lists/join — введённый код неверный/просрочен, а не
+ * какая-то другая ошибка. Общая проверка для обоих мест, где это различие
+ * важно вызывающему коду. */
+export function isInvalidCodeError(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 400;
+}
+
+/** Общий catch-обработчик для redeemLinkCode/joinList: не invalid-code —
+ * пробрасываем дальше, invalid-code — отдаём вызывающему коду колбэком. */
+export function handleInvalidCodeError(
+  err: unknown,
+  onInvalidCode: () => void,
+): void {
+  if (!isInvalidCodeError(err)) {
+    throw err;
+  }
+  onInvalidCode();
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}/api${path}`, {
     credentials: 'include',

@@ -10,7 +10,7 @@ import {
   joinList,
   renameList,
 } from '@/entities/list';
-import { ApiError } from '@/shared/api';
+import { handleInvalidCodeError } from '@/shared/api';
 import { buildDeepLink } from '@/shared/lib/deep-link';
 import { useOnlineStatus } from '@/shared/lib/useOnlineStatus';
 import { notifications } from '@/shared/ui';
@@ -29,40 +29,11 @@ type InviteModalState = { title: string; code: string; url: string } | null;
 
 const INVALID_CODE_MESSAGE = 'Неверный код';
 
-export function useListSwitcher({
-  list,
-  onListsChanged,
-  pendingCount,
-  failedCount,
-  initialCode,
-  onDeepLinkConsumed,
-}: Params) {
-  const online = useOnlineStatus();
-  const syncStatusText = getSyncStatusText(pendingCount, failedCount, online);
-
+/** Модалка приглашения в список — вынесена отдельно, чтобы useListSwitcher
+ * укладывался в max-statements. */
+function useInviteModal(list: List) {
   const [memberCount, setMemberCount] = useState<number | null>(null);
   const [inviteModal, setInviteModal] = useState<InviteModalState>(null);
-  const [renameOpen, setRenameOpen] = useState(false);
-  const [renameValue, setRenameValue] = useState(list.name);
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-
-  const [newListOpen, setNewListOpen] = useState(false);
-  const [newListName, setNewListName] = useState('');
-  const [codeOpen, setCodeOpen] = useState(false);
-  const [codeValue, setCodeValue] = useState('');
-
-  // Диплинк (?listCode=...) предзаполняет и открывает ту же модалку, что
-  // открыл бы ручной ввод — тап по «Продолжить» и есть подтверждение.
-  const deepLinkConsumed = useRef(false);
-  useEffect(() => {
-    if (deepLinkConsumed.current || !initialCode) {
-      return;
-    }
-    deepLinkConsumed.current = true;
-    setCodeValue(initialCode);
-    setCodeOpen(true);
-    onDeepLinkConsumed();
-  }, [initialCode, onDeepLinkConsumed]);
 
   const loadMemberCount = (): void => {
     getMemberCount(list.id).then(setMemberCount);
@@ -78,6 +49,23 @@ export function useListSwitcher({
   };
 
   const closeInviteModal = (): void => setInviteModal(null);
+
+  return {
+    closeInviteModal,
+    inviteModal,
+    loadMemberCount,
+    memberCount,
+    openInvite,
+  };
+}
+
+/** Переименование списка. */
+function useRenameList(
+  list: List,
+  onListsChanged: (selectId?: string) => void,
+) {
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState(list.name);
 
   const openRename = (): void => {
     setRenameValue(list.name);
@@ -95,6 +83,23 @@ export function useListSwitcher({
     onListsChanged();
   };
 
+  return {
+    closeRename,
+    openRename,
+    renameOpen,
+    renameValue,
+    setRenameValue,
+    submitRename,
+  };
+}
+
+/** Подтверждение удаления/выхода из списка (см. lists/routes.ts —
+ * DELETE /lists/:id ветвится по роли только на сервере). */
+function useDeleteList(
+  list: List,
+  onListsChanged: (selectId?: string) => void,
+) {
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const openConfirmDelete = (): void => setConfirmDeleteOpen(true);
   const closeConfirmDelete = (): void => setConfirmDeleteOpen(false);
 
@@ -104,6 +109,18 @@ export function useListSwitcher({
     onListsChanged();
   };
 
+  return {
+    closeConfirmDelete,
+    confirmDelete,
+    confirmDeleteOpen,
+    openConfirmDelete,
+  };
+}
+
+/** Создание нового списка. */
+function useNewList(onListsChanged: (selectId?: string) => void) {
+  const [newListOpen, setNewListOpen] = useState(false);
+  const [newListName, setNewListName] = useState('');
   const openNewList = (): void => setNewListOpen(true);
   const closeNewList = (): void => setNewListOpen(false);
 
@@ -118,6 +135,37 @@ export function useListSwitcher({
     onListsChanged(created.id);
   };
 
+  return {
+    closeNewList,
+    newListName,
+    newListOpen,
+    openNewList,
+    setNewListName,
+    submitNewList,
+  };
+}
+
+/** Присоединение по коду приглашения — плюс диплинк (?listCode=...),
+ * который предзаполняет и открывает ту же модалку, что и ручной ввод. */
+function useJoinByCode(
+  initialCode: string | undefined,
+  onDeepLinkConsumed: () => void,
+  onListsChanged: (selectId?: string) => void,
+) {
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [codeValue, setCodeValue] = useState('');
+
+  const deepLinkConsumed = useRef(false);
+  useEffect(() => {
+    if (deepLinkConsumed.current || !initialCode) {
+      return;
+    }
+    deepLinkConsumed.current = true;
+    setCodeValue(initialCode);
+    setCodeOpen(true);
+    onDeepLinkConsumed();
+  }, [initialCode, onDeepLinkConsumed]);
+
   const openCode = (): void => {
     setCodeValue('');
     setCodeOpen(true);
@@ -130,42 +178,42 @@ export function useListSwitcher({
       setCodeOpen(false);
       onListsChanged(joined.id);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 400) {
+      handleInvalidCodeError(err, () => {
         notifications.show({ color: 'red', message: INVALID_CODE_MESSAGE });
-        return;
-      }
-      throw err;
+      });
     }
   };
 
+  return { closeCode, codeOpen, codeValue, openCode, setCodeValue, submitCode };
+}
+
+export function useListSwitcher({
+  list,
+  onListsChanged,
+  pendingCount,
+  failedCount,
+  initialCode,
+  onDeepLinkConsumed,
+}: Params) {
+  const online = useOnlineStatus();
+  const syncStatusText = getSyncStatusText(pendingCount, failedCount, online);
+
+  const invite = useInviteModal(list);
+  const rename = useRenameList(list, onListsChanged);
+  const deleteConfirm = useDeleteList(list, onListsChanged);
+  const newList = useNewList(onListsChanged);
+  const joinByCode = useJoinByCode(
+    initialCode,
+    onDeepLinkConsumed,
+    onListsChanged,
+  );
+
   return {
-    closeCode,
-    closeConfirmDelete,
-    closeInviteModal,
-    closeNewList,
-    closeRename,
-    codeOpen,
-    codeValue,
-    confirmDelete,
-    confirmDeleteOpen,
-    inviteModal,
-    loadMemberCount,
-    memberCount,
-    newListName,
-    newListOpen,
-    openCode,
-    openConfirmDelete,
-    openInvite,
-    openNewList,
-    openRename,
-    renameOpen,
-    renameValue,
-    setCodeValue,
-    setNewListName,
-    setRenameValue,
-    submitCode,
-    submitNewList,
-    submitRename,
     syncStatusText,
+    ...invite,
+    ...rename,
+    ...deleteConfirm,
+    ...newList,
+    ...joinByCode,
   };
 }
