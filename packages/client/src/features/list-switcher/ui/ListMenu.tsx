@@ -56,12 +56,7 @@ export function ListMenu({
             Пригласить в список
           </Menu.Item>
         )}
-        <Menu.Item
-          disabled
-          leftSection={<UsersFourIcon size={16} />}
-        >
-          Участники ({memberCount ?? '…'})
-        </Menu.Item>
+        <Menu.Label>Участники ({memberCount ?? '…'})</Menu.Label>
         {isOwner && (
           <Menu.Item
             leftSection={<TextboxIcon size={16} />}

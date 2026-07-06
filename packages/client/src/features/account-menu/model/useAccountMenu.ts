@@ -5,7 +5,9 @@ import type { Bootstrap } from '@kupi/shared';
 import { redeemLinkCode } from '@/entities/list';
 import { handleInvalidCodeError } from '@/shared/api';
 import { buildDeepLink } from '@/shared/lib/deep-link';
-import { notifications } from '@/shared/ui';
+import { notifyInvalidCode } from '@/shared/lib/notify';
+import { useAsyncAction } from '@/shared/lib/useAsyncAction';
+import type { CodeShareModalState } from '@/shared/ui';
 import { createLinkCode } from '../api/link-code-api';
 
 interface Params {
@@ -14,33 +16,35 @@ interface Params {
   onDeepLinkConsumed: () => void;
 }
 
-type CodeModalState = { title: string; code: string; url: string } | null;
-
-const INVALID_CODE_MESSAGE = 'Неверный код';
-
 /** Состояние экрана ручного ввода кода устройства — вынесено отдельно,
  * чтобы useAccountMenu укладывался в max-statements. */
 function useDeviceCodeInput(onSubmit: (code: string) => void) {
-  const [deviceCodeOpen, setDeviceCodeOpen] = useState(false);
+  const [isDeviceCodeOpen, setIsDeviceCodeOpen] = useState(false);
   const [deviceCodeValue, setDeviceCodeValue] = useState('');
 
   const openDeviceCode = (): void => {
     setDeviceCodeValue('');
-    setDeviceCodeOpen(true);
+    setIsDeviceCodeOpen(true);
   };
-  const closeDeviceCode = (): void => setDeviceCodeOpen(false);
+  const closeDeviceCode = (): void => setIsDeviceCodeOpen(false);
   // Возврат к экрану ввода из предупреждающей модалки (cancelLinkDevice) —
   // в отличие от openDeviceCode, не должен сбрасывать уже введённый код.
-  const reopenDeviceCode = (): void => setDeviceCodeOpen(true);
+  const reopenDeviceCode = (): void => setIsDeviceCodeOpen(true);
   const submitDeviceCode = (): void => {
-    onSubmit(deviceCodeValue);
-    setDeviceCodeOpen(false);
+    // Пустой код не открывает предупреждающую модалку с мёртвой кнопкой
+    // «Подключить»
+    const code = deviceCodeValue.trim();
+    if (!code) {
+      return;
+    }
+    onSubmit(code);
+    setIsDeviceCodeOpen(false);
   };
 
   return {
     closeDeviceCode,
-    deviceCodeOpen,
     deviceCodeValue,
+    isDeviceCodeOpen,
     openDeviceCode,
     reopenDeviceCode,
     setDeviceCodeValue,
@@ -48,27 +52,8 @@ function useDeviceCodeInput(onSubmit: (code: string) => void) {
   };
 }
 
-export function useAccountMenu({
-  onAccountLinked,
-  initialCode,
-  onDeepLinkConsumed,
-}: Params) {
-  const [codeModal, setCodeModal] = useState<CodeModalState>(null);
-  const [pendingLinkCode, setPendingLinkCode] = useState<string | null>(null);
-  const deviceCode = useDeviceCodeInput(setPendingLinkCode);
-
-  // Диплинк (?deviceCode=...) пропускает шаг ручного ввода и сразу
-  // открывает предупреждающую модалку — та же логика, что и после
-  // submitDeviceCode(), просто код известен заранее.
-  const deepLinkConsumed = useRef(false);
-  useEffect(() => {
-    if (deepLinkConsumed.current || !initialCode) {
-      return;
-    }
-    deepLinkConsumed.current = true;
-    setPendingLinkCode(initialCode);
-    onDeepLinkConsumed();
-  }, [initialCode, onDeepLinkConsumed]);
+function useLinkCodeModal() {
+  const [codeModal, setCodeModal] = useState<CodeShareModalState | null>(null);
 
   const openLinkDevice = async (): Promise<void> => {
     const { code } = await createLinkCode();
@@ -81,12 +66,37 @@ export function useAccountMenu({
 
   const closeCodeModal = (): void => setCodeModal(null);
 
+  return { closeCodeModal, codeModal, openLinkDevice };
+}
+
+export function useAccountMenu({
+  onAccountLinked,
+  initialCode,
+  onDeepLinkConsumed,
+}: Params) {
+  const linkCode = useLinkCodeModal();
+  const [pendingLinkCode, setPendingLinkCode] = useState<string | null>(null);
+  const deviceCode = useDeviceCodeInput(setPendingLinkCode);
+
+  // Диплинк (?deviceCode=...) пропускает шаг ручного ввода и сразу
+  // открывает предупреждающую модалку — та же логика, что и после
+  // submitDeviceCode(), просто код известен заранее.
+  const hasConsumedDeepLink = useRef(false);
+  useEffect(() => {
+    if (hasConsumedDeepLink.current || !initialCode) {
+      return;
+    }
+    hasConsumedDeepLink.current = true;
+    setPendingLinkCode(initialCode);
+    onDeepLinkConsumed();
+  }, [initialCode, onDeepLinkConsumed]);
+
   const cancelLinkDevice = (): void => {
     setPendingLinkCode(null);
     deviceCode.reopenDeviceCode();
   };
 
-  const confirmLinkDevice = async (): Promise<void> => {
+  const submitConfirm = async (): Promise<void> => {
     const code = pendingLinkCode;
     if (!code) {
       return;
@@ -99,18 +109,19 @@ export function useAccountMenu({
       handleInvalidCodeError(err, () => {
         setPendingLinkCode(null);
         deviceCode.reopenDeviceCode();
-        notifications.show({ color: 'red', message: INVALID_CODE_MESSAGE });
+        notifyInvalidCode();
       });
     }
   };
+  const { run: confirmLinkDevice, isLoading: isLinking } =
+    useAsyncAction(submitConfirm);
 
   return {
     cancelLinkDevice,
-    closeCodeModal,
-    codeModal,
     confirmLinkDevice,
-    openLinkDevice,
+    isLinking,
     pendingLinkCode,
+    ...linkCode,
     ...deviceCode,
   };
 }

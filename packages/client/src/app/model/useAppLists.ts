@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Bootstrap, Category, List } from '@kupi/shared';
 
@@ -41,23 +41,48 @@ async function loadInitialBootstrap(): Promise<BootstrapResult> {
   }
 }
 
+export type BootstrapStatus = 'loading' | 'ready' | 'error';
+
+// Загрузка bootstrap с явными loading/error-состояниями: до этого при сбое
+// (500, офлайн без кеша) экран навсегда оставался пустым и неотличимым от
+// загрузки. retry вызывает ту же функцию заново. Вынесено в под-хук, чтобы
+// useAppLists укладывался в max-statements (тот же паттерн, что useDeepLink).
+function useBootstrap(apply: (result: BootstrapResult) => void) {
+  const [status, setStatus] = useState<BootstrapStatus>('loading');
+  const isBootstrapped = useRef(false);
+
+  const runBootstrap = useCallback(async (): Promise<void> => {
+    setStatus('loading');
+    try {
+      apply(await loadInitialBootstrap());
+      setStatus('ready');
+    } catch {
+      setStatus('error');
+    }
+  }, [apply]);
+
+  useEffect(() => {
+    if (isBootstrapped.current) {
+      return;
+    }
+    isBootstrapped.current = true;
+    runBootstrap();
+  }, [runBootstrap]);
+
+  return { retry: runBootstrap, status };
+}
+
 export function useAppLists() {
   const [lists, setLists] = useState<List[]>([]);
   const [activeListId, setActiveListId] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const bootstrapped = useRef(false);
 
-  useEffect(() => {
-    if (bootstrapped.current) {
-      return;
-    }
-    bootstrapped.current = true;
-    loadInitialBootstrap().then((result) => {
-      setLists(result.lists);
-      setActiveListId(result.lists[0]?.id ?? null);
-      setCategories(result.categories);
-    });
+  const applyBootstrap = useCallback((result: BootstrapResult): void => {
+    setLists(result.lists);
+    setActiveListId(result.lists[0]?.id ?? null);
+    setCategories(result.categories);
   }, []);
+  const { status, retry } = useBootstrap(applyBootstrap);
 
   useEffect(() => {
     if (lists.length > 0) {
@@ -108,6 +133,8 @@ export function useAppLists() {
     lists,
     onAccountLinked,
     refreshLists,
+    retry,
     setActiveListId,
+    status,
   };
 }

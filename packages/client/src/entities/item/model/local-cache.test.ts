@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   clearListCache,
@@ -40,5 +40,17 @@ describe('local-cache', () => {
     clearListCache('list-1');
     expect(loadListCache('list-1')).toBeNull();
     expect(loadListCache('list-2')?.lastSeenSeq).toBe(2);
+  });
+
+  it('saveListCache swallows quota/private-mode errors instead of throwing', () => {
+    const spy = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new DOMException('QuotaExceededError');
+      });
+    expect(() =>
+      saveListCache('list-1', { items: [], lastSeenSeq: 1, queue: [] }),
+    ).not.toThrow();
+    spy.mockRestore();
   });
 });

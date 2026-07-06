@@ -5,6 +5,7 @@ interface Props {
   onClose: () => void;
   isOwner: boolean;
   onConfirm: () => void;
+  loading?: boolean;
 }
 
 export function DeleteConfirmModal({
@@ -12,6 +13,7 @@ export function DeleteConfirmModal({
   onClose,
   isOwner,
   onConfirm,
+  loading,
 }: Props) {
   return (
     <Modal
@@ -28,6 +30,7 @@ export function DeleteConfirmModal({
         mt="md"
         fullWidth
         color="red"
+        loading={loading}
         onClick={onConfirm}
       >
         Подтвердить

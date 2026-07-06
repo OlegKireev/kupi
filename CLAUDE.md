@@ -310,10 +310,17 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   length-based guessing) → `joinList`. `model/useListSwitcher.ts` owns all of
   this state (absorbed from the deleted `list-menu/model/useListMenu.ts`),
   split into one private hook per sub-flow (`useInviteModal`,
-  `useRenameList`, `useDeleteList`, `useNewList`, `useJoinByCode`) purely to
-  fit `oxlint`'s `max-statements` — `useListSwitcher` itself just calls all
-  five and spreads their results into one return object, none of them are
-  used anywhere else. `useJoinByCode`'s invalid-code handling and
+  `useRenameList`, `useDeleteList`, `useNewList`, `useJoinByCode`) — partly
+  for `oxlint`'s `max-statements`, but mainly because each is a
+  self-contained modal *controller*: it owns its own open/value/loading
+  state and wraps its own submit in `useAsyncAction` (see below), exposing
+  `handle*`-prefixed callbacks (`handleOpen`/`handleClose`/`handleChange`/
+  `handleSubmit`). `useListSwitcher` returns those five as *grouped* objects
+  (`{ invite, rename, deleteConfirm, newList, joinByCode, syncStatusText }`),
+  not a flat 25-key spread — `ListSwitcher` reads `rename.handleSubmit`,
+  `invite.modal`, etc. (the `handle*` naming is also what keeps
+  `react/jsx-handler-names` happy on those `onX={group.handleY}` member
+  expressions; a bare `.submit`/`.run` would warn). `useJoinByCode`'s invalid-code handling and
   `useAccountMenu`'s `confirmLinkDevice` (device-link codes) hit the exact
   same 400-vs-rethrow branch, so that one *did* move to `shared/api`
   (`isInvalidCodeError`/`handleInvalidCodeError` next to `ApiError`) instead
@@ -321,9 +328,20 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   the same way for `max-lines-per-function`: the dropdown's JSX moved to
   `ui/ListMenu.tsx`, the rename/new-list/join-by-code modals — identical
   shape (`Modal` + one `TextInput` + submit `Button`) apart from copy and
-  icon — collapsed into one `ui/TextPromptModal.tsx`, and the delete/leave
-  confirm modal into `ui/DeleteConfirmModal.tsx`; `ListSwitcher` itself is
-  just composition now. `ui/MenuTrigger.tsx` (the clickable list title) is
+  icon — collapsed into one `TextPromptModal` (now in `shared/ui`, since
+  `account-menu`'s device-code entry is the same shape and reuses it; it
+  wraps its field in a `<form>` so Enter submits, not just a button click),
+  and the delete/leave confirm modal into `ui/DeleteConfirmModal.tsx`;
+  `ListSwitcher` itself is just composition now (one destructure of the six
+  grouped controllers, then wiring them to `ListMenu` + the modals).
+  `shared/lib/useAsyncAction` (the re-entrancy guard + `loading` flag so a
+  double-click can't fire `createList` twice; errors propagate to the global
+  handler below) is called *inside* each controller hook, not in the UI —
+  the hook already owns the submit, so it owns its in-flight state too.
+  The shared "invalid code" toast is `shared/lib/notify.ts`'s
+  `notifyInvalidCode` (used by both `useJoinByCode` and `confirmLinkDevice`),
+  and the `{ title, code, url }` share-modal state is one exported
+  `CodeShareModalState` type next to `CodeShareModal`. `ui/MenuTrigger.tsx` (the clickable list title) is
   `Menu.Target`'s child — Mantine clones that child and injects
   `onClick`/`aria-*`/`ref` onto it, so the component must spread them onto
   the real `<button>`. A version of this component that only read
@@ -350,16 +368,23 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   это устройство" → `createLinkCode` (`api/link-code-api.ts`, moved here from
   the deleted `list-menu`), code-`Modal` with "Копировать" — same shape as
   list-switcher's invite modal, just a different code; "Ввести код устройства"
-  → `Modal` + `TextInput` (device codes only — 6 chars) → a warning
-  confirm-`Modal` ("заменит аккаунт этого устройства... текущие списки станут
-  недоступны", recovery isn't implemented) → on confirm, `redeemLinkCode` then
-  `onAccountLinked(bootstrap)`. `model/useAccountMenu.ts` owns this state
-  (device-link half ported unchanged from the old
-  `useListSwitcher`/`useListMenu`). The device-code-entry fields
+  → the shared `TextPromptModal` (device codes only — 6 chars; the input is
+  trimmed and an empty code no longer opens the warning modal onto a dead
+  "Подключить" button) → a warning confirm-`Modal` ("заменит аккаунт этого
+  устройства... текущие списки станут недоступны", recovery isn't
+  implemented) → on confirm, `redeemLinkCode` then `onAccountLinked(bootstrap)`.
+  The confirm submit is wrapped in `useAsyncAction` (`loading`/no-double-submit)
+  *inside* `useAccountMenu`, exposed as `confirmLinkDevice`/`linking` — same
+  "hook owns its own submit" rule as list-switcher's controllers, so
+  `AccountMenu.tsx` no longer calls `useAsyncAction` itself.
+  `model/useAccountMenu.ts` owns this state (device-link half ported unchanged
+  from the old `useListSwitcher`/`useListMenu`). The device-code-entry fields
   (`deviceCodeOpen`/`deviceCodeValue`/open/close/submit) live in a private
-  `useDeviceCodeInput` hook in the same file, spread into
-  `useAccountMenu`'s return — split out purely to fit `oxlint`'s
-  `max-statements`, not a reusable abstraction (nothing else calls it).
+  `useDeviceCodeInput` hook, and the QR share-code modal
+  (`codeModal`/`openLinkDevice`/`closeCodeModal`) in a private
+  `useLinkCodeModal` hook, both in the same file and spread into
+  `useAccountMenu`'s return — split out to fit `oxlint`'s `max-statements`,
+  not reusable abstractions (nothing else calls them).
   Same reasoning for `handleLinkError`, which pulls the shared "was this a
   400 invalid-code, or something to rethrow" branch out of
   `confirmLinkDevice`.
@@ -378,7 +403,12 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
   network/fallback logic is a plain async function, `loadInitialBootstrap`
   (not a hook — called once from the bootstrap effect), with the
   network-error branch further split into `loadCachedBootstrapOrThrow`. The
-  bootstrap effect is guarded with a `useRef` flag against React
+  effect (and the state around it) lives in a `useBootstrap` sub-hook that
+  exposes a `status: 'loading' | 'ready' | 'error'` and a `retry` — `App.tsx`
+  renders a centered `Loader` while `loading` and an error screen with a
+  "Повторить" button (calls `retry`) while `error`, instead of the old
+  blank-`null` screen that couldn't tell "still loading" from "500/offline
+  failed". The bootstrap effect is guarded with a `useRef` flag against React
   `StrictMode`'s dev-mode double-invoke, which would otherwise call
   `POST /api/accounts` twice on a fresh device and create two accounts.
   `lists`/`activeListId` (not a single `list`) live here so the header can
@@ -397,8 +427,19 @@ no Context/store/TanStack Query — `lists`/`activeListId`/`categories` live in
 /categories` falls back to a `localStorage` cache (`kupi:bootstrap`,
   written by `app/model/bootstrap-cache.ts` on every `lists`/`categories`
   change) — covers reopening the app offline. No cache yet (device's very
-  first launch, offline) — unchanged empty-screen behavior, a known gap, not
+  first launch, offline) — falls through to the `status: 'error'` screen
+  with a retry button (previously a blank screen), a known gap softened, not
   a regression.
+
+`app/main.tsx` registers one global `unhandledrejection` handler that shows a
+generic red "Что-то пошло не так" toast — the safety net for async onClick
+handlers (menu openers, submits) whose promises nothing awaits, so a failed
+mutation surfaces instead of failing silently. Paths that are *expected* to
+fail benignly opt out by catching locally: `useAddItem`'s debounced
+suggestion fetch and `useListSwitcher`'s `loadMemberCount` (both best-effort,
+a network blip shouldn't toast the user just for typing or opening a menu).
+`shared/lib/useAsyncAction` rethrows into this handler on purpose. Bootstrap
+failures are handled by the `status` screen above, not this toast.
 
 Icons throughout the header/menu are `@phosphor-icons/react` components
 (`CaretDown`, `UserCircle`, `Copy`, `Trash`), not the text glyphs

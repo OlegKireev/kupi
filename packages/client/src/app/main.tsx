@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core';
-import { Notifications } from '@mantine/notifications';
+import { Notifications, notifications } from '@mantine/notifications';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -26,6 +26,15 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
     });
   });
 }
+
+// Общий страховочный экран для действий-обработчиков, которые не await'ятся
+// (onClick-хендлеры меню/сабмиты): любой необработанный reject показывает
+// тост вместо молчаливого провала. Точечные хендлеры сами гасят ожидаемые
+// ошибки (например, invalid-code) — сюда долетает только неожиданное.
+window.addEventListener('unhandledrejection', (event) => {
+  event.preventDefault();
+  notifications.show({ color: 'red', message: 'Что-то пошло не так' });
+});
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

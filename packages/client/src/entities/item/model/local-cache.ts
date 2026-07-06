@@ -23,7 +23,14 @@ export function loadListCache(listId: string): ListCache | null {
 }
 
 export function saveListCache(listId: string, cache: ListCache): void {
-  localStorage.setItem(key(listId), JSON.stringify(cache));
+  // Запись в кеш не должна ронять оптимистичное применение правки: в Safari
+  // Private Mode / при переполнении квоты setItem бросает, но само
+  // изменение и без кеша прекрасно уходит в очередь синка.
+  try {
+    localStorage.setItem(key(listId), JSON.stringify(cache));
+  } catch {
+    // кеш — не источник истины, потеря записи некритична
+  }
 }
 
 export function clearListCache(listId: string): void {

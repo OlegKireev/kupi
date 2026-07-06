@@ -9,7 +9,7 @@ import {
   Menu,
   Modal,
   Text,
-  TextInput,
+  TextPromptModal,
   UserCircleIcon,
 } from '@/shared/ui';
 import { useAccountMenu } from '../model/useAccountMenu';
@@ -29,7 +29,7 @@ export function AccountMenu({
     codeModal,
     closeCodeModal,
     openLinkDevice,
-    deviceCodeOpen,
+    isDeviceCodeOpen,
     deviceCodeValue,
     setDeviceCodeValue,
     openDeviceCode,
@@ -38,6 +38,7 @@ export function AccountMenu({
     pendingLinkCode,
     cancelLinkDevice,
     confirmLinkDevice,
+    isLinking,
   } = useAccountMenu({ initialCode, onAccountLinked, onDeepLinkConsumed });
 
   return (
@@ -75,26 +76,17 @@ export function AccountMenu({
         code={codeModal?.code ?? ''}
       />
 
-      <Modal
-        opened={deviceCodeOpen}
+      <TextPromptModal
+        opened={isDeviceCodeOpen}
         onClose={closeDeviceCode}
         title="Ввести код устройства"
-      >
-        <TextInput
-          value={deviceCodeValue}
-          onChange={(e) => setDeviceCodeValue(e.currentTarget.value)}
-          placeholder="Код подключения устройства"
-          data-autofocus
-        />
-        <Button
-          mt="md"
-          fullWidth
-          leftSection={<KeyIcon size={16} />}
-          onClick={submitDeviceCode}
-        >
-          Продолжить
-        </Button>
-      </Modal>
+        value={deviceCodeValue}
+        onChange={setDeviceCodeValue}
+        onSubmit={submitDeviceCode}
+        placeholder="Код подключения устройства"
+        submitLabel="Продолжить"
+        submitIcon={<KeyIcon size={16} />}
+      />
 
       <Modal
         opened={pendingLinkCode !== null}
@@ -109,6 +101,7 @@ export function AccountMenu({
           mt="md"
           fullWidth
           color="red"
+          loading={isLinking}
           onClick={confirmLinkDevice}
         >
           Подключить

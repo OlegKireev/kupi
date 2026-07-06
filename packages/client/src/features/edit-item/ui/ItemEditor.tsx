@@ -23,7 +23,7 @@ export function ItemEditor({ item, categories, applyChange, onClose }: Props) {
   const { setQuantity, setCategory, deleteItem } = useEditItem({ applyChange });
 
   return (
-    <Stack component="li">
+    <Stack>
       <Group p="0 16px 16px">
         <Group
           gap="xs"

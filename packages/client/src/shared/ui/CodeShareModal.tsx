@@ -3,6 +3,14 @@ import { CopyIcon, ShareIcon } from '@phosphor-icons/react';
 import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 
+/** Состояние открытой CodeShareModal — общее для инвайта в список и
+ * привязки устройства (оба держат ровно эти три поля либо null). */
+export interface CodeShareModalState {
+  title: string;
+  code: string;
+  url: string;
+}
+
 interface Props {
   opened: boolean;
   onClose: () => void;

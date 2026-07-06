@@ -1,4 +1,5 @@
 import { ListScreenPage } from '@/pages/list-screen';
+import { Button, Center, Loader, Stack, Text } from '@/shared/ui';
 import { useAppLists } from './model/useAppLists';
 import { useDeepLink } from './model/useDeepLink';
 
@@ -10,8 +11,29 @@ export function App() {
     lists,
     onAccountLinked,
     refreshLists,
+    retry,
     setActiveListId,
+    status,
   } = useAppLists();
+
+  if (status === 'loading') {
+    return (
+      <Center h="100dvh">
+        <Loader />
+      </Center>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <Center h="100dvh">
+        <Stack align="center">
+          <Text c="dimmed">Не удалось загрузить списки</Text>
+          <Button onClick={retry}>Повторить</Button>
+        </Stack>
+      </Center>
+    );
+  }
 
   const activeList = lists.find(({ id }) => id === activeListId);
   if (!activeList) {

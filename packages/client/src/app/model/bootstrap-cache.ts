@@ -26,5 +26,11 @@ export function saveBootstrapCache(
   lists: List[],
   categories: Category[],
 ): void {
-  localStorage.setItem(KEY, JSON.stringify({ categories, lists }));
+  // См. local-cache.ts: запись в кеш не должна ронять рендер при
+  // переполнении квоты / приватном режиме — кеш лишь ускоряет холодный старт.
+  try {
+    localStorage.setItem(KEY, JSON.stringify({ categories, lists }));
+  } catch {
+    // некритично, при следующем онлайне bootstrap перезапросится
+  }
 }

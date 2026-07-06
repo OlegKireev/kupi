@@ -2,12 +2,14 @@ export {
   ActionIcon,
   Autocomplete,
   Button,
+  Center,
   Chip,
   Checkbox,
   InputLabel,
   Flex,
   Group,
   List,
+  Loader,
   Menu,
   Modal,
   Stack,
@@ -17,7 +19,8 @@ export {
   UnstyledButton,
 } from '@mantine/core';
 export { notifications } from '@mantine/notifications';
-export { CodeShareModal } from './CodeShareModal';
+export { CodeShareModal, type CodeShareModalState } from './CodeShareModal';
+export { TextPromptModal } from './TextPromptModal';
 export {
   CaretDownIcon,
   CheckIcon,

@@ -12,8 +12,10 @@ import {
 } from '@/entities/list';
 import { handleInvalidCodeError } from '@/shared/api';
 import { buildDeepLink } from '@/shared/lib/deep-link';
+import { notifyInvalidCode } from '@/shared/lib/notify';
+import { useAsyncAction } from '@/shared/lib/useAsyncAction';
 import { useOnlineStatus } from '@/shared/lib/useOnlineStatus';
-import { notifications } from '@/shared/ui';
+import type { CodeShareModalState } from '@/shared/ui';
 import { getSyncStatusText } from './sync-status';
 
 interface Params {
@@ -25,38 +27,31 @@ interface Params {
   onDeepLinkConsumed: () => void;
 }
 
-type InviteModalState = { title: string; code: string; url: string } | null;
-
-const INVALID_CODE_MESSAGE = 'Неверный код';
-
-/** Модалка приглашения в список — вынесена отдельно, чтобы useListSwitcher
- * укладывался в max-statements. */
+/** Приглашение в список + счётчик участников. */
 function useInviteModal(list: List) {
   const [memberCount, setMemberCount] = useState<number | null>(null);
-  const [inviteModal, setInviteModal] = useState<InviteModalState>(null);
+  const [modal, setModal] = useState<CodeShareModalState | null>(null);
 
-  const loadMemberCount = (): void => {
-    getMemberCount(list.id).then(setMemberCount);
+  const handleLoadMembers = (): void => {
+    // Best-effort: счётчик подгружается на открытие меню. Сбой оставляет «…»,
+    // а не сыплет глобальным тостом за само открытие меню.
+    getMemberCount(list.id)
+      .then(setMemberCount)
+      .catch(() => undefined);
   };
 
-  const openInvite = async (): Promise<void> => {
+  const handleOpen = async (): Promise<void> => {
     const { code } = await createInvite(list.id);
-    setInviteModal({
+    setModal({
       code,
       title: 'Код приглашения',
       url: buildDeepLink('list', code),
     });
   };
 
-  const closeInviteModal = (): void => setInviteModal(null);
+  const handleClose = (): void => setModal(null);
 
-  return {
-    closeInviteModal,
-    inviteModal,
-    loadMemberCount,
-    memberCount,
-    openInvite,
-  };
+  return { handleClose, handleLoadMembers, handleOpen, memberCount, modal };
 }
 
 /** Переименование списка. */
@@ -64,32 +59,34 @@ function useRenameList(
   list: List,
   onListsChanged: (selectId?: string) => void,
 ) {
-  const [renameOpen, setRenameOpen] = useState(false);
-  const [renameValue, setRenameValue] = useState(list.name);
+  const [isOpen, setIsOpen] = useState(false);
+  const [value, setValue] = useState(list.name);
 
-  const openRename = (): void => {
-    setRenameValue(list.name);
-    setRenameOpen(true);
+  const handleOpen = (): void => {
+    setValue(list.name);
+    setIsOpen(true);
   };
-  const closeRename = (): void => setRenameOpen(false);
+  const handleClose = (): void => setIsOpen(false);
 
-  const submitRename = async (): Promise<void> => {
-    const name = renameValue.trim();
+  const submit = async (): Promise<void> => {
+    const name = value.trim();
     if (!name) {
       return;
     }
     await renameList(list.id, name);
-    setRenameOpen(false);
+    setIsOpen(false);
     onListsChanged();
   };
+  const { run: handleSubmit, isLoading } = useAsyncAction(submit);
 
   return {
-    closeRename,
-    openRename,
-    renameOpen,
-    renameValue,
-    setRenameValue,
-    submitRename,
+    handleChange: setValue,
+    handleClose,
+    handleOpen,
+    handleSubmit,
+    isLoading,
+    isOpen,
+    value,
   };
 }
 
@@ -99,49 +96,47 @@ function useDeleteList(
   list: List,
   onListsChanged: (selectId?: string) => void,
 ) {
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const openConfirmDelete = (): void => setConfirmDeleteOpen(true);
-  const closeConfirmDelete = (): void => setConfirmDeleteOpen(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const handleOpen = (): void => setIsOpen(true);
+  const handleClose = (): void => setIsOpen(false);
 
-  const confirmDelete = async (): Promise<void> => {
+  const submit = async (): Promise<void> => {
     await deleteList(list.id);
-    setConfirmDeleteOpen(false);
+    setIsOpen(false);
     onListsChanged();
   };
+  const { run: handleSubmit, isLoading } = useAsyncAction(submit);
 
-  return {
-    closeConfirmDelete,
-    confirmDelete,
-    confirmDeleteOpen,
-    openConfirmDelete,
-  };
+  return { handleClose, handleOpen, handleSubmit, isLoading, isOpen };
 }
 
 /** Создание нового списка. */
 function useNewList(onListsChanged: (selectId?: string) => void) {
-  const [newListOpen, setNewListOpen] = useState(false);
-  const [newListName, setNewListName] = useState('');
-  const openNewList = (): void => setNewListOpen(true);
-  const closeNewList = (): void => setNewListOpen(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [value, setValue] = useState('');
+  const handleOpen = (): void => setIsOpen(true);
+  const handleClose = (): void => setIsOpen(false);
 
-  const submitNewList = async (): Promise<void> => {
-    const name = newListName.trim();
+  const submit = async (): Promise<void> => {
+    const name = value.trim();
     if (!name) {
       return;
     }
     const created = await createList(name);
-    setNewListName('');
-    setNewListOpen(false);
+    setValue('');
+    setIsOpen(false);
     onListsChanged(created.id);
   };
+  const { run: handleSubmit, isLoading } = useAsyncAction(submit);
 
   return {
-    closeNewList,
-    newListName,
-    newListOpen,
-    openNewList,
-    setNewListName,
-    submitNewList,
+    handleChange: setValue,
+    handleClose,
+    handleOpen,
+    handleSubmit,
+    isLoading,
+    isOpen,
+    value,
   };
 }
 
@@ -152,39 +147,50 @@ function useJoinByCode(
   onDeepLinkConsumed: () => void,
   onListsChanged: (selectId?: string) => void,
 ) {
-  const [codeOpen, setCodeOpen] = useState(false);
-  const [codeValue, setCodeValue] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [value, setValue] = useState('');
 
-  const deepLinkConsumed = useRef(false);
+  const hasConsumedDeepLink = useRef(false);
   useEffect(() => {
-    if (deepLinkConsumed.current || !initialCode) {
+    if (hasConsumedDeepLink.current || !initialCode) {
       return;
     }
-    deepLinkConsumed.current = true;
-    setCodeValue(initialCode);
-    setCodeOpen(true);
+    hasConsumedDeepLink.current = true;
+    setValue(initialCode);
+    setIsOpen(true);
     onDeepLinkConsumed();
   }, [initialCode, onDeepLinkConsumed]);
 
-  const openCode = (): void => {
-    setCodeValue('');
-    setCodeOpen(true);
+  const handleOpen = (): void => {
+    setValue('');
+    setIsOpen(true);
   };
-  const closeCode = (): void => setCodeOpen(false);
+  const handleClose = (): void => setIsOpen(false);
 
-  const submitCode = async (): Promise<void> => {
+  const submit = async (): Promise<void> => {
+    const code = value.trim();
+    if (!code) {
+      return;
+    }
     try {
-      const joined: List = await joinList(codeValue);
-      setCodeOpen(false);
+      const joined: List = await joinList(code);
+      setIsOpen(false);
       onListsChanged(joined.id);
     } catch (err) {
-      handleInvalidCodeError(err, () => {
-        notifications.show({ color: 'red', message: INVALID_CODE_MESSAGE });
-      });
+      handleInvalidCodeError(err, notifyInvalidCode);
     }
   };
+  const { run: handleSubmit, isLoading } = useAsyncAction(submit);
 
-  return { closeCode, codeOpen, codeValue, openCode, setCodeValue, submitCode };
+  return {
+    handleChange: setValue,
+    handleClose,
+    handleOpen,
+    handleSubmit,
+    isLoading,
+    isOpen,
+    value,
+  };
 }
 
 export function useListSwitcher({
@@ -195,8 +201,8 @@ export function useListSwitcher({
   initialCode,
   onDeepLinkConsumed,
 }: Params) {
-  const online = useOnlineStatus();
-  const syncStatusText = getSyncStatusText(pendingCount, failedCount, online);
+  const isOnline = useOnlineStatus();
+  const syncStatusText = getSyncStatusText(pendingCount, failedCount, isOnline);
 
   const invite = useInviteModal(list);
   const rename = useRenameList(list, onListsChanged);
@@ -208,12 +214,5 @@ export function useListSwitcher({
     onListsChanged,
   );
 
-  return {
-    syncStatusText,
-    ...invite,
-    ...rename,
-    ...deleteConfirm,
-    ...newList,
-    ...joinByCode,
-  };
+  return { deleteConfirm, invite, joinByCode, newList, rename, syncStatusText };
 }

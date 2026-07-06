@@ -1,3 +1,4 @@
+import { useDebouncedCallback } from '@mantine/hooks';
 import { useRef, useState } from 'react';
 
 import type { ItemChange, Suggestion } from '@kupi/shared';
@@ -9,6 +10,8 @@ interface Params {
   applyChange: (change: ItemChange) => void;
 }
 
+const SUGGESTIONS_DEBOUNCE_MS = 250;
+
 export function useAddItem({ applyChange }: Params) {
   const [text, setText] = useState('');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -19,16 +22,25 @@ export function useAddItem({ applyChange }: Params) {
   // triggered before Mantine registers the selection - see AddItemInput.
   const justSelectedRef = useRef(false);
 
-  const onTextChange = async (value: string): Promise<void> => {
+  const fetchSuggestions = useDebouncedCallback(async (value: string) => {
+    try {
+      const results = value.trim() ? await getSuggestions(value) : [];
+      if (latestQueryRef.current === value) {
+        setSuggestions(results);
+      }
+    } catch {
+      // Подсказки — best-effort: сетевую ошибку глотаем молча, а не показываем
+      // пользователю глобальный тост просто за то, что он печатает.
+    }
+  }, SUGGESTIONS_DEBOUNCE_MS);
+
+  const onTextChange = (value: string): void => {
     if (justSelectedRef.current) {
       return;
     }
     setText(value);
     latestQueryRef.current = value;
-    const results = value.trim() ? await getSuggestions(value) : [];
-    if (latestQueryRef.current === value) {
-      setSuggestions(results);
-    }
+    fetchSuggestions(value);
   };
 
   const addItem = (name: string): void => {
@@ -46,8 +58,6 @@ export function useAddItem({ applyChange }: Params) {
     setSuggestions([]);
   };
 
-  const submit = (): void => addItem(text);
-
   const selectSuggestion = (name: string): void => {
     justSelectedRef.current = true;
     queueMicrotask(() => {
@@ -61,7 +71,7 @@ export function useAddItem({ applyChange }: Params) {
       if (justSelectedRef.current) {
         return;
       }
-      submit();
+      addItem(text);
     });
   };
 

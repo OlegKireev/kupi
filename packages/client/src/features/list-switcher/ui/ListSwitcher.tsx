@@ -1,10 +1,14 @@
 import type { List } from '@kupi/shared';
 
-import { CodeShareModal, FilePlusIcon, KeyIcon } from '@/shared/ui';
+import {
+  CodeShareModal,
+  FilePlusIcon,
+  KeyIcon,
+  TextPromptModal,
+} from '@/shared/ui';
 import { useListSwitcher } from '../model/useListSwitcher';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { ListMenu } from './ListMenu';
-import { TextPromptModal } from './TextPromptModal';
 
 interface Props {
   list: List;
@@ -27,43 +31,15 @@ export function ListSwitcher({
   initialCode,
   onDeepLinkConsumed,
 }: Props) {
-  const {
-    syncStatusText,
-    memberCount,
-    loadMemberCount,
-    inviteModal,
-    openInvite,
-    closeInviteModal,
-    renameOpen,
-    renameValue,
-    setRenameValue,
-    openRename,
-    closeRename,
-    submitRename,
-    confirmDeleteOpen,
-    openConfirmDelete,
-    closeConfirmDelete,
-    confirmDelete,
-    newListOpen,
-    newListName,
-    setNewListName,
-    openNewList,
-    closeNewList,
-    submitNewList,
-    codeOpen,
-    codeValue,
-    setCodeValue,
-    openCode,
-    closeCode,
-    submitCode,
-  } = useListSwitcher({
-    failedCount,
-    initialCode,
-    list,
-    onDeepLinkConsumed,
-    onListsChanged,
-    pendingCount,
-  });
+  const { syncStatusText, invite, rename, deleteConfirm, newList, joinByCode } =
+    useListSwitcher({
+      failedCount,
+      initialCode,
+      list,
+      onDeepLinkConsumed,
+      onListsChanged,
+      pendingCount,
+    });
 
   const isOwner = list.role === 'owner';
 
@@ -74,60 +50,64 @@ export function ListSwitcher({
         lists={lists}
         isOwner={isOwner}
         syncStatusText={syncStatusText}
-        memberCount={memberCount}
-        onOpen={loadMemberCount}
+        memberCount={invite.memberCount}
+        onOpen={invite.handleLoadMembers}
         onSwitchList={onSwitchList}
-        onInvite={openInvite}
-        onRename={openRename}
-        onDelete={openConfirmDelete}
-        onNewList={openNewList}
-        onJoinByCode={openCode}
+        onInvite={invite.handleOpen}
+        onRename={rename.handleOpen}
+        onDelete={deleteConfirm.handleOpen}
+        onNewList={newList.handleOpen}
+        onJoinByCode={joinByCode.handleOpen}
       />
 
       <CodeShareModal
-        opened={inviteModal !== null}
-        onClose={closeInviteModal}
-        title={inviteModal?.title ?? ''}
-        url={inviteModal?.url ?? ''}
-        code={inviteModal?.code ?? ''}
+        opened={invite.modal !== null}
+        onClose={invite.handleClose}
+        title={invite.modal?.title ?? ''}
+        url={invite.modal?.url ?? ''}
+        code={invite.modal?.code ?? ''}
       />
 
       <TextPromptModal
-        opened={renameOpen}
-        onClose={closeRename}
+        opened={rename.isOpen}
+        onClose={rename.handleClose}
         title="Переименовать список"
-        value={renameValue}
-        onChange={setRenameValue}
-        onSubmit={submitRename}
+        value={rename.value}
+        onChange={rename.handleChange}
+        onSubmit={rename.handleSubmit}
+        loading={rename.isLoading}
         submitLabel="Сохранить"
       />
 
       <DeleteConfirmModal
-        opened={confirmDeleteOpen}
-        onClose={closeConfirmDelete}
+        opened={deleteConfirm.isOpen}
+        onClose={deleteConfirm.handleClose}
         isOwner={isOwner}
-        onConfirm={confirmDelete}
+        onConfirm={deleteConfirm.handleSubmit}
+        loading={deleteConfirm.isLoading}
       />
 
       <TextPromptModal
-        opened={newListOpen}
-        onClose={closeNewList}
+        opened={newList.isOpen}
+        onClose={newList.handleClose}
         title="Новый список"
-        value={newListName}
-        onChange={setNewListName}
-        onSubmit={submitNewList}
+        value={newList.value}
+        onChange={newList.handleChange}
+        onSubmit={newList.handleSubmit}
+        loading={newList.isLoading}
         placeholder="Название списка"
         submitLabel="Создать"
         submitIcon={<FilePlusIcon />}
       />
 
       <TextPromptModal
-        opened={codeOpen}
-        onClose={closeCode}
+        opened={joinByCode.isOpen}
+        onClose={joinByCode.handleClose}
         title="Присоединиться по коду списка"
-        value={codeValue}
-        onChange={setCodeValue}
-        onSubmit={submitCode}
+        value={joinByCode.value}
+        onChange={joinByCode.handleChange}
+        onSubmit={joinByCode.handleSubmit}
+        loading={joinByCode.isLoading}
         placeholder="Код приглашения"
         submitLabel="Продолжить"
         submitIcon={<KeyIcon />}
